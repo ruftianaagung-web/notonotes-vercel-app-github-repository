@@ -224,30 +224,32 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
           </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar pb-6">
-        {groupBy === 'Semua' && filteredNotes.length === 0 && filteredTasks.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <SearchIcon className="w-12 h-12 mb-4 text-slate-700 opacity-50" />
-            <div className="text-center font-medium text-sm">
-              {searchQuery ? `${t('noMatchData')} "${searchQuery}"` : `${t('noNotes')} & ${t('noTasks')}`}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 w-full">
+        <div className="w-full px-6 py-6 space-y-8">
+          {groupBy === 'Semua' && filteredNotes.length === 0 && filteredTasks.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+              <SearchIcon className="w-12 h-12 md:w-16 md:h-16 mb-4 text-slate-700 opacity-50" />
+              <div className="text-center font-medium text-sm md:text-base">
+                {searchQuery ? `${t('noMatchData')} "${searchQuery}"` : `${t('noNotes')} & ${t('noTasks')}`}
+              </div>
             </div>
-          </div>
-        )}
-        {groupBy === 'Level Tugas' && filteredTasks.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <CheckSquare className="w-12 h-12 mb-4 text-slate-700 opacity-50" />
-            <div className="text-center font-medium text-sm">{t('noMatchTasks')}</div>
-          </div>
-        )}
-        {groupBy === 'Tag Catatan' && filteredNotes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <Tag className="w-12 h-12 mb-4 text-slate-700 opacity-50" />
-            <div className="text-center font-medium text-sm">{t('noMatchNotes')}</div>
-          </div>
-        )}
+          )}
+          {groupBy === 'Level Tugas' && filteredTasks.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+              <CheckSquare className="w-12 h-12 md:w-16 md:h-16 mb-4 text-slate-700 opacity-50" />
+              <div className="text-center font-medium text-sm md:text-base">{t('noMatchTasks')}</div>
+            </div>
+          )}
+          {groupBy === 'Tag Catatan' && filteredNotes.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+              <Tag className="w-12 h-12 md:w-16 md:h-16 mb-4 text-slate-700 opacity-50" />
+              <div className="text-center font-medium text-sm md:text-base">{t('noMatchNotes')}</div>
+            </div>
+          )}
 
-        {renderGroupedContent()}
+          {renderGroupedContent()}
 
+        </div>
       </div>
     </div>
   );

@@ -283,7 +283,7 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar pb-6">
+      <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar pb-6 w-full">
         {/* Greeting & Focus Card */}
         <div className="relative w-full rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 p-6 overflow-hidden shadow-lg mb-8 text-white">
           <div className="relative z-10">
@@ -297,7 +297,7 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
               {/* Streak Badge */}
               <div 
                 onClick={() => setShowStreakSplash(true)}
-                className="relative flex-shrink-0 flex flex-col items-center justify-center bg-gradient-to-b from-orange-500/20 to-orange-600/20  border border-orange-400/30 rounded-2xl px-5 py-4 shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] transition-all cursor-pointer group" 
+                className="relative flex-shrink-0 flex flex-col items-center justify-center bg-gradient-to-b from-orange-500/20 to-orange-600/20 border border-orange-400/30 rounded-2xl px-5 py-4 shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] transition-all cursor-pointer group" 
                 title={`${streak} hari berturut-turut!`}
               >
                 <Flame className="w-8 h-8 text-orange-400 fill-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.8)] mb-2 group-hover:animate-pulse" />
@@ -339,7 +339,7 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col gap-3">
                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-1"><CheckSquare className="w-3 h-3" /> {t('priorityTasks')}</h4>
                  {pinnedTasks.map((task, i) => (
-                   <div key={task.id} className={`flex items-center gap-3 group border-slate-800 pb-3 cursor-pointer ${i === pinnedTasks.length - 1 ? '' : 'border-b pt-1'}`} onClick={() => toggleTask(task.id)}>
+                   <div key={task.id} className={`flex items-center gap-3 group border-slate-800 pb-3 cursor-pointer ${i === pinnedTasks.length - 1 ? '' : 'border-b mt-2 -mb-1'}`} onClick={() => toggleTask(task.id)}>
                      <div className="p-2 -ml-2 rounded-full flex-none flex items-center justify-center transition-colors">
                        <button className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-none transition-colors ${task.completed ? 'border-indigo-500 bg-indigo-500' : 'border-slate-700 group-hover:border-indigo-500'}`}>
                          {task.completed && <div className="w-2 h-2 rounded-sm bg-white" />}
@@ -370,9 +370,9 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
                     key={note.id} 
                     onClick={() => onOpenNote(note)}
                     role="button"
-                    className="w-full text-left flex items-start gap-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer group"
+                    className="w-full text-left flex flex-col items-start gap-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer group"
                   >
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden w-full">
                        <div className="flex justify-between items-start mb-2">
                           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                             {(note.tags || []).slice(0,2).map(tag => (
@@ -386,21 +386,14 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
                           <span className="text-[10px] text-slate-500 font-mono flex-shrink-0 ml-2">{note.date}</span>
                        </div>
                        <h4 className="font-bold text-slate-50 leading-tight mb-1 truncate">{note.title || 'Untitled Note'}</h4>
-                       <p className="text-xs text-slate-500 line-clamp-1">{note.content ? note.content.replace(/<[^>]*>?/gm, '') : '...'}</p>
+                       <p className="text-xs text-slate-500 line-clamp-2">{note.content ? note.content.replace(/<[^>]*>?/gm, '') : '...'}</p>
                     </div>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} 
-                      className="p-3 -mr-2 opacity-100 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
-                    >
-                       <Trash2 className="w-5 h-5" />
-                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </section>
-
       </div>
 
       {/* FAB Add */}

@@ -186,69 +186,71 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar flex flex-col">
-        {/* Title */}
-        <input
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          className="w-full text-3xl font-bold bg-transparent border-none outline-none text-slate-50 tracking-tight placeholder-slate-700 mb-4"
-          placeholder={t('titlePlaceholder') || "New Note Title..."}
-        />
-
-        {/* Tags */}
-        <div className="flex flex-wrap items-center gap-2 mb-8">
-          {tags.map((tag) => (
-            <div
-              key={tag}
-              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg group"
-            >
-              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">
-                {tag.replace("#", "")}
-              </span>
-              <button
-                onClick={() => handleRemoveTag(tag)}
-                className="w-4 h-4 flex items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-red-500/80 hover:text-white transition-colors"
-              >
-                &times;
-              </button>
-            </div>
-          ))}
-          {isAddingTag ? (
-            <form onSubmit={handleAddTagSubmit} className="flex items-center">
-              <input
-                type="text"
-                value={newTagInput}
-                onChange={(e) => setNewTagInput(e.target.value)}
-                autoFocus
-                onBlur={handleAddTagSubmit}
-                placeholder={t('tagNamePlaceholder')}
-                className="h-7 w-24 px-2 bg-slate-900 border border-indigo-500 rounded-lg text-[10px] text-slate-50 outline-none"
-              />
-            </form>
-          ) : (
-            <button
-              onClick={() => setIsAddingTag(true)}
-              className="h-7 px-3 flex items-center justify-center rounded-lg border border-dashed border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-wider hover:border-slate-500 transition-colors cursor-pointer"
-            >
-              + Tag
-            </button>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-grow flex flex-col bg-slate-900 border border-slate-800 rounded-3xl p-6">
-          <div
-            id="note-editor-content"
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleInput}
-            onBlur={handleInput}
-            className="w-full flex-grow text-slate-300 text-sm leading-relaxed bg-transparent border-none outline-none overflow-y-auto"
-            style={{ minHeight: "200px" }}
-            data-placeholder={t('notePlaceholder') || "Mulai menulis di sini..."}
+      <div className="flex-1 overflow-y-auto no-scrollbar w-full">
+        <div className="w-full px-6 py-6 flex flex-col min-h-full">
+          {/* Title */}
+          <input
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            className="w-full text-3xl font-bold bg-transparent border-none outline-none text-slate-50 tracking-tight placeholder-slate-700 mb-4"
+            placeholder={t('titlePlaceholder') || "New Note Title..."}
           />
+
+          {/* Tags */}
+          <div className="flex flex-wrap items-center gap-2 mb-8">
+            {tags.map((tag) => (
+              <div
+                key={tag}
+                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg group"
+              >
+                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">
+                  {tag.replace("#", "")}
+                </span>
+                <button
+                  onClick={() => handleRemoveTag(tag)}
+                  className="w-4 h-4 flex items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-red-500/80 hover:text-white transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+            {isAddingTag ? (
+              <form onSubmit={handleAddTagSubmit} className="flex items-center">
+                <input
+                  type="text"
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  autoFocus
+                  onBlur={handleAddTagSubmit}
+                  placeholder={t('tagNamePlaceholder')}
+                  className="h-7 w-24 px-2 bg-slate-900 border border-indigo-500 rounded-lg text-[10px] text-slate-50 outline-none"
+                />
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsAddingTag(true)}
+                className="h-7 px-3 flex items-center justify-center rounded-lg border border-dashed border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-wider hover:border-slate-500 transition-colors cursor-pointer"
+              >
+                + Tag
+              </button>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-grow flex flex-col bg-slate-900 border border-slate-800 rounded-3xl p-6">
+            <div
+              id="note-editor-content"
+              ref={editorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleInput}
+              onBlur={handleInput}
+              className="w-full flex-grow text-slate-300 text-sm leading-relaxed bg-transparent border-none outline-none overflow-y-auto note-editor-area"
+              style={{ minHeight: "200px" }}
+              data-placeholder={t('notePlaceholder') || "Mulai menulis di sini..."}
+            />
+          </div>
         </div>
       </div>
 

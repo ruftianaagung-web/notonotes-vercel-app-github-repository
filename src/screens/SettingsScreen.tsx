@@ -81,9 +81,10 @@ export default function SettingsScreen({ isDarkMode, toggleDark }: { isDarkMode:
         <span className="font-bold text-lg text-slate-50 tracking-tight">{t('settingsMenu')}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar pb-6 space-y-8">
-        
-        {/* AKUN & TAMPILAN */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 w-full">
+        <div className="w-full px-6 py-6 space-y-8">
+          
+          {/* AKUN & TAMPILAN */}
         <section>
           <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Smartphone size={14}/> {t('appearance')}</h3>
           <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
@@ -516,6 +517,7 @@ export default function SettingsScreen({ isDarkMode, toggleDark }: { isDarkMode:
           </div>
         )}
 
+        </div>
       </div>
     </div>
   );

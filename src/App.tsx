@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Home, CheckCircle2, Calendar as CalendarIcon, Settings, Lock, Layers } from 'lucide-react';
+import { Home, CheckCircle2, Calendar as CalendarIcon, Settings, Lock, Layers, Feather } from 'lucide-react';
 import HomeScreen from './screens/HomeScreen';
 import TasksScreen from './screens/TasksScreen';
 import CalendarScreen from './screens/CalendarScreen';
@@ -100,8 +100,8 @@ export default function App() {
 
   if (!hasCompletedOnboarding) {
     return (
-      <div className={`min-h-screen flex justify-center items-center ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} sm:p-4 md:p-8 relative`}>
-        <div className="w-full h-[100dvh] sm:h-[90vh] sm:max-h-[900px] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-slate-800 bg-slate-950 shadow-2xl relative flex flex-col overflow-hidden text-slate-200 font-sans">
+      <div className={`w-full h-[100dvh] flex flex-col md:flex-row ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} text-slate-200 font-sans relative overflow-hidden`}>
+        <div className="flex-1 w-full mx-auto max-w-[1920px]">
           <OnboardingScreen onFinish={() => setHasCompletedOnboarding(true)} />
         </div>
       </div>
@@ -109,33 +109,51 @@ export default function App() {
   }
 
   if (isLocked) {
-    return <PinScreen correctPin={appPin} onUnlock={() => setIsUnlocked(true)} isDarkMode={isDarkMode} lang={lang} />;
+    return (
+      <div className={`w-full h-[100dvh] flex flex-col md:flex-row ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} text-slate-200 font-sans relative overflow-hidden`}>
+        <div className="flex-1 w-full mx-auto max-w-[1920px]">
+          <PinScreen correctPin={appPin} onUnlock={() => setIsUnlocked(true)} isDarkMode={isDarkMode} lang={lang} />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className={`min-h-screen flex justify-center items-center ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} sm:p-4 md:p-8 relative`}>
-      <div className="w-full h-[100dvh] sm:h-[90vh] sm:max-h-[900px] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-slate-800 bg-slate-950 shadow-2xl relative flex flex-col overflow-hidden text-slate-200 font-sans">
-        
-        <div className={`flex-1 relative flex flex-col overflow-hidden`}>
-          {currentScreen === 'home' && <HomeScreen isDarkMode={isDarkMode} toggleDark={() => setIsDarkMode(!isDarkMode)} onOpenNote={openNote} onNavigate={(screen) => setCurrentScreen(screen)} />}
-          {currentScreen === 'tasks' && <TasksScreen onNavigate={(screen) => setCurrentScreen(screen)} />}
-          {currentScreen === 'calendar' && <CalendarScreen />}
-          {currentScreen === 'note-editor' && activeNote && <NoteEditorScreen note={activeNote} onBack={closeNote} />}
-          {currentScreen === 'search' && <SearchScreen onOpenNote={openNote} />}
-          {currentScreen === 'settings' && <SettingsScreen isDarkMode={isDarkMode} toggleDark={() => setIsDarkMode(!isDarkMode)} />}
-        </div>
+    <div className={`w-full h-[100dvh] flex flex-col md:flex-row ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} text-slate-200 font-sans relative overflow-hidden`}>
+      
+      {/* Desktop Sidebar / Mobile Bottom Nav */}
+      {currentScreen !== 'note-editor' && (
+        <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/95 border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-safe md:pb-0 h-[72px] md:h-screen md:pt-8 md:px-4">
+          
+          {/* Logo only visible on Desktop */}
+          <div className="hidden md:flex items-center gap-3 px-4 mb-8">
+             <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                 <Feather className="w-5 h-5 text-indigo-400" />
+             </div>
+             <span className="font-black text-2xl tracking-tighter text-slate-50">
+                NOTO
+             </span>
+          </div>
 
-        {currentScreen !== 'note-editor' && (
-          <div className="flex-none bg-slate-900 border-t border-slate-800 px-4 sm:px-6 h-[72px] flex justify-between items-center z-50 relative pb-safe">
+          <div className="flex flex-row md:flex-col justify-evenly md:justify-start w-full px-2 sm:px-6 md:px-0 gap-1 md:gap-2 h-full md:h-auto items-center md:items-stretch">
             <NavItem icon={<Home />} label={t('home')} active={currentScreen === 'home'} onClick={() => setCurrentScreen('home')} />
             <NavItem icon={<CheckCircle2 />} label={t('tasksMenu')} active={currentScreen === 'tasks'} onClick={() => setCurrentScreen('tasks')} />
             <NavItem icon={<Layers />} label={t('searchMenu')} active={currentScreen === 'search'} onClick={() => setCurrentScreen('search')} />
             <NavItem icon={<CalendarIcon />} label={t('calendar')} active={currentScreen === 'calendar'} onClick={() => setCurrentScreen('calendar')} />
             <NavItem icon={<Settings />} label={t('settingsMenu')} active={currentScreen === 'settings'} onClick={() => setCurrentScreen('settings')} />
           </div>
-        )}
-        
+        </nav>
+      )}
+
+      <div className="flex-1 relative flex flex-col overflow-hidden w-full max-w-[1920px] mx-auto">
+        {currentScreen === 'home' && <HomeScreen isDarkMode={isDarkMode} toggleDark={() => setIsDarkMode(!isDarkMode)} onOpenNote={openNote} onNavigate={(screen) => setCurrentScreen(screen)} />}
+        {currentScreen === 'tasks' && <TasksScreen onNavigate={(screen) => setCurrentScreen(screen)} />}
+        {currentScreen === 'calendar' && <CalendarScreen />}
+        {currentScreen === 'note-editor' && activeNote && <NoteEditorScreen note={activeNote} onBack={closeNote} />}
+        {currentScreen === 'search' && <SearchScreen onOpenNote={openNote} />}
+        {currentScreen === 'settings' && <SettingsScreen isDarkMode={isDarkMode} toggleDark={() => setIsDarkMode(!isDarkMode)} />}
       </div>
+
     </div>
   );
 }
@@ -144,15 +162,16 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
   return (
     <button 
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 min-w-[64px] min-h-[56px] group transition-colors ${
-        active ? 'text-indigo-400' : 'text-slate-500 hover:text-indigo-300'
+      className={`relative flex items-center group transition-colors rounded-2xl md:w-full md:px-4 md:py-3.5 md:justify-start flex-col md:flex-row justify-center min-w-[64px] min-h-[56px] md:min-h-0 md:min-w-0 ${
+        active ? 'text-indigo-400 md:bg-indigo-500/10 md:text-indigo-400' : 'text-slate-500 hover:text-indigo-300 md:hover:bg-slate-800/50'
       }`}
     >
-      <div className={`w-1 h-1 bg-indigo-500 rounded-full mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${active ? '!opacity-100' : ''}`}></div>
-      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] [&>svg]:stroke-[2] transition-colors ${active ? '[&>svg]:stroke-indigo-400' : ''}`}>
+      <div className={`md:hidden w-1 h-1 bg-indigo-500 rounded-full mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${active ? '!opacity-100' : ''}`}></div>
+      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] [&>svg]:stroke-[2] transition-colors md:mr-4 ${active ? '[&>svg]:stroke-indigo-400' : ''}`}>
         {icon}
       </div>
-      <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5">{label}</span>
+      <span className="text-[10px] md:text-sm md:font-bold font-bold uppercase md:tracking-wider md:normal-case tracking-widest mt-0.5 md:mt-0">{label}</span>
+      {active && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full"></div>}
     </button>
   );
 }
@@ -200,8 +219,8 @@ function PinScreen({ correctPin, onUnlock, isDarkMode, lang }: { correctPin: str
   };
 
   return (
-    <div className={`min-h-screen flex justify-center items-center ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} sm:p-4 md:p-8 relative`}>
-      <div className="w-full h-[100dvh] sm:h-[90vh] sm:max-h-[900px] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-slate-800 bg-slate-950 shadow-2xl relative flex flex-col items-center justify-center text-slate-200 font-sans p-8">
+    <div className={`min-h-screen flex justify-center items-center ${!isDarkMode ? 'light-theme' : 'bg-slate-950'} relative`}>
+      <div className="w-full max-w-[480px] min-h-[100dvh] relative flex flex-col items-center justify-center text-slate-200 font-sans p-8 shadow-2xl sm:border-x border-slate-800 bg-slate-950">
         <Lock className="w-12 h-12 text-indigo-500 mb-6" />
         <h2 className="text-xl font-bold tracking-tight mb-2">{t('pinLocked')}</h2>
         <p className="text-slate-500 text-sm mb-12">{t('enterPin')}</p>

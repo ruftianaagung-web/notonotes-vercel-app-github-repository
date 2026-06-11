@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search as SearchIcon, X, CheckSquare, FileText, Pin, Trash2, Tag } from 'lucide-react';
+import { Search as SearchIcon, X, CheckSquare, FileText, Pin, Trash2, Tag, Repeat } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Note, Task } from '../types';
@@ -78,10 +78,16 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
          </button>
          <div className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
             <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <p className="text-[10px] text-slate-500 font-mono">
                 {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
               </p>
+              {task.repeat === 'daily' && (
+                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 text-indigo-400 bg-indigo-500/10 flex items-center gap-1">
+                  <Repeat className="w-2.5 h-2.5" />
+                  {lang === 'id' ? 'Tiap Hari' : 'Daily'}
+                </span>
+              )}
               <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 ${
                 isHigh ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20' : 
                 isMed ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20' : 

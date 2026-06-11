@@ -23,4 +23,5 @@ export interface Task {
   priority: Priority;
   completed: boolean;
   pinned?: boolean;
+  repeat?: 'once' | 'daily';
 }

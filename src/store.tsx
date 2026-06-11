@@ -61,11 +61,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try { 
       const s = localStorage.getItem('noto_tasks'); 
       if (s) {
+        const todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         const parsed = JSON.parse(s);
         const seen = new Set();
         return parsed.map((t: Task) => {
           if (seen.has(t.id)) t.id = crypto.randomUUID();
           seen.add(t.id);
+          
+          if (t.repeat === 'daily' && t.date && t.date < todayStr) {
+            t.date = todayStr;
+            t.completed = false;
+          }
+          
           return t;
         });
       }

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, ClipboardList, Repeat } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Task } from '../types';
 
 export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => void }) {
-  const [activeTab, setActiveTab] = useState<'Semua' | 'Hari Ini' | 'Minggu Ini' | 'Selesai'>('Semua');
+  const [activeTab, setActiveTab] = useState<'Hari Ini' | 'Akan Datang' | 'Belum Selesai' | 'Selesai'>('Hari Ini');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'Tinggi' | 'Sedang' | 'Rendah'>('Sedang');
+  const [newTaskRepeat, setNewTaskRepeat] = useState<'once' | 'daily'>('once');
+  const [newTaskDate, setNewTaskDate] = useState<string>(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
   const { tasks, addTask, updateTask, toggleTask, lang } = useAppStore();
   const t = useTranslation(lang);
 
@@ -17,6 +19,8 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
     setEditingTask(task);
     setNewTaskTitle(task.title);
     setNewTaskPriority(task.priority);
+    setNewTaskRepeat(task.repeat || 'once');
+    setNewTaskDate(task.date || new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
   };
 
   const handleAddTaskSubmit = (e?: React.FormEvent) => {
@@ -26,7 +30,9 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
          updateTask({
            ...editingTask,
            title: newTaskTitle.trim(),
-           priority: newTaskPriority
+           priority: newTaskPriority,
+           repeat: newTaskRepeat,
+           date: newTaskDate
          });
        } else {
          const locale = lang === 'en' ? 'en-US' : 'id-ID';
@@ -35,13 +41,16 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            title: newTaskTitle.trim(),
            completed: false,
            priority: newTaskPriority,
-           date: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
-           time: new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+           date: newTaskDate,
+           time: new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+           repeat: newTaskRepeat
          });
        }
     }
     setNewTaskTitle('');
     setNewTaskPriority('Sedang');
+    setNewTaskRepeat('once');
+    setNewTaskDate(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
     setIsAddingTask(false);
     setEditingTask(null);
   };
@@ -52,37 +61,23 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
   tmr.setDate(tmr.getDate() + 1);
   const tomorrowStr = tmr.toISOString().split('T')[0];
 
-  const getStartOfWeekStr = () => {
-    const d = new Date(todayDate);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return d.toISOString().split('T')[0];
-  };
-
-  const getEndOfWeekStr = () => {
-    const d = new Date(todayDate);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? 0 : 7);
-    d.setDate(diff);
-    return d.toISOString().split('T')[0];
-  };
-
-  let filteredTasks = tasks;
+  let filteredTasks = [...tasks];
   if (activeTab === 'Hari Ini') {
-    filteredTasks = tasks.filter(t => t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini');
+    filteredTasks = filteredTasks.filter(t => (t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini'));
+  } else if (activeTab === 'Akan Datang') {
+    filteredTasks = filteredTasks.filter(t => !t.completed && t.date !== todayStr && t.date !== 'Hari ini' && t.date !== 'Hari Ini');
+  } else if (activeTab === 'Belum Selesai') {
+    filteredTasks = filteredTasks.filter(t => !t.completed);
+  } else if (activeTab === 'Selesai') {
+    filteredTasks = filteredTasks.filter(t => t.completed);
   }
-  if (activeTab === 'Minggu Ini') {
-    const startOfWeek = getStartOfWeekStr();
-    const endOfWeek = getEndOfWeekStr();
-    filteredTasks = tasks.filter(t => {
-      if (t.date === 'Hari ini' || t.date === 'Hari Ini' || t.date === 'Besok') return true;
-      return t.date >= startOfWeek && t.date <= endOfWeek;
-    });
-  }
-  if (activeTab === 'Selesai') {
-    filteredTasks = tasks.filter(t => t.completed);
-  }
+
+  filteredTasks.sort((a, b) => {
+    if (a.completed !== b.completed) {
+      return a.completed ? 1 : -1;
+    }
+    return 0;
+  });
 
   const isTodayTask = (d: string) => d === todayStr || d === 'Hari ini' || d === 'Hari Ini';
   const isTomorrowTask = (d: string) => d === tomorrowStr || d === 'Besok';
@@ -102,8 +97,13 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
 
       {/* Tabs */}
       <div className="px-6 py-4 flex gap-2 overflow-x-auto no-scrollbar border-b border-slate-800/50 flex-shrink-0 lg:justify-center">
-        {['Semua', 'Hari Ini', 'Minggu Ini', 'Selesai'].map((tab, idx) => {
-          const tabLabels = [t('allTasks') || 'Semua', t('today') || 'Hari Ini', t('thisWeek') || 'Minggu Ini', t('completed') || 'Selesai'];
+        {['Hari Ini', 'Akan Datang', 'Belum Selesai', 'Selesai'].map((tab, idx) => {
+          const tabLabels = [
+             lang === 'id' ? 'Tugas Hari Ini' : "Today's Tasks", 
+             lang === 'id' ? 'Tugas Akan Datang' : "Upcoming Tasks", 
+             lang === 'id' ? 'Belum Selesai' : "Uncompleted", 
+             lang === 'id' ? 'Sudah Selesai' : "Completed"
+          ];
           return (
           <button 
             key={tab}
@@ -195,27 +195,58 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            <div className="bg-slate-900 border-t border-slate-800 p-6 rounded-t-3xl animate-in slide-in-from-bottom-8 duration-300">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">{editingTask ? t('editTask') || 'Edit Tugas' : t('newTask')}</h3>
               <form onSubmit={handleAddTaskSubmit}>
-                 <input 
+                 <textarea 
                    autoFocus
-                   type="text" 
                    value={newTaskTitle}
                    onChange={e => setNewTaskTitle(e.target.value)}
                    placeholder={t('taskPlaceholder') || "Contoh: Belajar UI/UX..."}
-                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-4 text-slate-50 focus:outline-none focus:border-indigo-500 mb-4"
+                   className="w-full h-48 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-4 text-slate-50 focus:outline-none focus:border-indigo-500 mb-4 resize-none"
                  />
-                 <div className="flex gap-2 mb-4">
-                   {(['Tinggi', 'Sedang', 'Rendah'] as const).map(p => {
-                     const pLabel = p === 'Tinggi' ? t('high') || p : p === 'Sedang' ? t('medium') || p : t('low') || p;
-                     return (
-                     <button
-                       key={p}
-                       type="button"
-                       onClick={() => setNewTaskPriority(p)}
-                       className={`flex-1 py-2 text-xs font-bold rounded-xl border ${newTaskPriority === p ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
-                     >
-                       {pLabel}
-                     </button>
-                   )})}
+                 <div className="flex flex-col gap-4 mb-4 md:flex-row">
+                   <div className="flex-1 flex flex-col">
+                     <span className="text-[10px] text-slate-500 uppercase font-bold mb-2 ml-1 hidden md:block">{lang === 'id' ? 'Prioritas' : 'Priority'}</span>
+                     <div className="flex gap-2">
+                       {(['Tinggi', 'Sedang', 'Rendah'] as const).map(p => {
+                         const pLabel = p === 'Tinggi' ? t('high') || p : p === 'Sedang' ? t('medium') || p : t('low') || p;
+                         return (
+                         <button
+                           key={p}
+                           type="button"
+                           onClick={() => setNewTaskPriority(p)}
+                           className={`flex-1 py-2 text-xs font-bold rounded-xl border ${newTaskPriority === p ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
+                         >
+                           {pLabel}
+                         </button>
+                       )})}
+                     </div>
+                   </div>
+                   <div className="w-full md:w-auto flex flex-col">
+                     <span className="text-[10px] text-slate-500 uppercase font-bold mb-2 ml-1 hidden md:block">{lang === 'id' ? 'Tanggal' : 'Date'}</span>
+                     <input
+                       type="date"
+                       value={newTaskDate}
+                       onChange={e => setNewTaskDate(e.target.value)}
+                       className="w-full md:w-auto bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 min-h-[34px] text-sm text-slate-50 focus:outline-none focus:border-indigo-500"
+                       style={{ colorScheme: 'dark' }}
+                     />
+                   </div>
+                 </div>
+                 <div className="flex gap-2 mb-6">
+                   <button
+                     type="button"
+                     onClick={() => setNewTaskRepeat('once')}
+                     className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border ${newTaskRepeat === 'once' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
+                   >
+                     {lang === 'id' ? 'Sekali Aja' : 'Once'}
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => setNewTaskRepeat('daily')}
+                     className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border ${newTaskRepeat === 'daily' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
+                   >
+                     <Repeat className="w-3.5 h-3.5" />
+                     {lang === 'id' ? 'Tiap Hari' : 'Daily'}
+                   </button>
                  </div>
                  <div className="flex gap-3">
                    <button type="button" onClick={() => { setIsAddingTask(false); setEditingTask(null); setNewTaskTitle(''); }} className="flex-1 px-4 py-3 rounded-xl bg-slate-800 text-slate-50 font-bold hover:bg-slate-700 transition-colors">{t('cancel')}</button>
@@ -253,6 +284,12 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
            <span className="text-[10px] text-slate-500 font-mono">
              {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
            </span>
+           {task.repeat === 'daily' && (
+             <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 text-indigo-400 bg-indigo-500/10 flex items-center gap-1">
+               <Repeat className="w-2.5 h-2.5" />
+               {lang === 'id' ? 'Tiap Hari' : 'Daily'}
+             </span>
+           )}
            <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 ${
              isHigh ? 'text-orange-400 bg-orange-500/10' : 
              isMed ? 'text-blue-400 bg-blue-500/10' : 

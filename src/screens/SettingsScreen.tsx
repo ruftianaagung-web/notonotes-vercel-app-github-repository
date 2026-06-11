@@ -308,17 +308,30 @@ export default function SettingsScreen({ isDarkMode, toggleDark }: { isDarkMode:
               <ChevronRight className="w-4 h-4 text-slate-600" />
             </button>
 
-            <button onClick={() => window.open('https://instagram.com/noto.grow', '_blank')} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors w-full text-left">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <MessageCircle size={16} />
-                </div>
-                <span className="font-medium text-sm text-slate-300">{t('contactDeveloper')}</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-600" />
-            </button>
+            <div className="flex flex-col p-4 px-5 border-b border-slate-800 bg-slate-900/50">
+              <p className="text-xs text-slate-400 leading-relaxed mb-3">
+                {lang === 'id' 
+                  ? 'Saran dan kritik Anda sangat berarti bagi kami. Silakan hubungi Instagram Noto.' 
+                  : 'Your suggestions and feedback are very meaningful to us. Please contact Noto on Instagram.'}
+              </p>
+              <button 
+                onClick={() => window.open('https://instagram.com/noto.grow', '_blank')} 
+                className="flex items-center justify-center gap-2 p-3 bg-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-500/20 transition-colors w-full border border-indigo-500/20"
+              >
+                <MessageCircle size={16} />
+                <span className="font-semibold text-sm">@noto.grow</span>
+              </button>
+            </div>
           </div>
           
+          <div className="mt-6 mb-2 mx-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+            <p className="text-xs text-slate-400 text-center leading-relaxed">
+              {lang === 'id'
+                ? 'Noto saat ini masih dalam tahap pengembangan dan belum ada versi Aplikasi.'
+                : 'Noto is currently still in development and does not have an App version yet.'}
+            </p>
+          </div>
+
           <div className="mt-10 text-center">
             <p className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600">NOTO</p>
             <p className="text-[10px] text-slate-700 mt-1">{t('madeWithSimplicity')}</p>

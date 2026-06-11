@@ -70,12 +70,13 @@ export default function App() {
           navigator.serviceWorker.ready.then(reg => {
              reg.showNotification(title, {
                  body: body,
-                 icon: '/pwa-192x192.png',
-                 badge: '/pwa-192x192.png'
+                 icon: '/icon.png',
+                 badge: '/icon.png'
              });
           }).catch(() => {
              new Notification(title, {
-               body: body
+               body: body,
+               icon: '/icon.png'
              });
           });
         }
@@ -127,8 +128,8 @@ export default function App() {
           
           {/* Logo only visible on Desktop */}
           <div className="hidden md:flex items-center gap-3 px-4 mb-8">
-             <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                 <Feather className="w-5 h-5 text-indigo-400" />
+             <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center overflow-hidden">
+                 <img src="/icon.png" alt="Noto Logo" className="w-full h-full object-cover" />
              </div>
              <span className="font-black text-2xl tracking-tighter text-slate-50">
                 NOTO

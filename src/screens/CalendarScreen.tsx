@@ -104,6 +104,8 @@ export default function CalendarScreen() {
 
 
 
+  const completionPercentageNumber = selectedTasks.length > 0 ? Math.round((completedCount / selectedTasks.length) * 100) : 0;
+
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">
       {/* Top Bar */}
@@ -225,7 +227,10 @@ export default function CalendarScreen() {
                   {selectedTasks.length > 0 && (
                     <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-800">
                       <h5 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 md:mb-6 text-center">{t('completionPercentage') || 'Persentase Selesai'}</h5>
-                      <div className="h-40 md:h-56 w-full">
+                      <div className="h-40 md:h-56 w-full relative">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-3xl md:text-4xl font-bold text-slate-50">{completionPercentageNumber}%</span>
+                        </div>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie

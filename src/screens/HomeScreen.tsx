@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Feather, CheckSquare, Bell, Clock, Play, Pause, RotateCcw, X, Pin, FileText, Trash2, Flame, Sparkles, ChevronRight } from 'lucide-react';
+import { Plus, Feather, CheckSquare, Bell, Clock, Play, Pause, RotateCcw, X, Pin, FileText, Trash2, Flame, Sparkles, ChevronRight, Repeat } from 'lucide-react';
 import { Note, Task } from '../types';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
@@ -23,12 +23,23 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
     return `${t('hello')} ${currentUser.name || 'Kawan'}`;
   };
 
-  const [showStreakSplash, setShowStreakSplash] = useState(() => !sessionStorage.getItem('streak_splash_seen'));
+  const [showStreakSplash, setShowStreakSplash] = useState(() => {
+    try {
+      const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      const lastSeen = localStorage.getItem('streak_splash_seen_date');
+      return lastSeen !== today;
+    } catch(e) {
+      return false;
+    }
+  });
   const [splashAnim, setSplashAnim] = useState(false);
 
   useEffect(() => {
     if (showStreakSplash) {
-      sessionStorage.setItem('streak_splash_seen', 'true');
+      try {
+        const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        localStorage.setItem('streak_splash_seen_date', today);
+      } catch(e) {}
       const enterTimer = setTimeout(() => setSplashAnim(true), 50);
       return () => {
         clearTimeout(enterTimer);
@@ -267,7 +278,7 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
           className="flex items-center gap-2 cursor-pointer group p-2 -ml-2"
           onClick={() => onNavigate('settings')}
         >
-           <Feather className="w-6 h-6 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+           <img src="/icon.png" alt="Noto Logo" className="w-6 h-6 rounded-md opacity-90 group-hover:opacity-100 transition-opacity" />
            <span className="font-black text-2xl tracking-tighter text-slate-50 group-hover:text-indigo-300 transition-colors">
               NOTO
            </span>
@@ -347,9 +358,17 @@ export default function HomeScreen({ isDarkMode, toggleDark, onOpenNote, onNavig
                      </div>
                      <div className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
                         <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
-                        <p className="text-[10px] text-slate-500 font-mono mt-1">
-                          {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <p className="text-[10px] text-slate-500 font-mono">
+                            {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
+                          </p>
+                          {task.repeat === 'daily' && (
+                            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 text-indigo-400 bg-indigo-500/10 flex items-center gap-1">
+                              <Repeat className="w-2.5 h-2.5" />
+                              {lang === 'id' ? 'Tiap Hari' : 'Daily'}
+                            </span>
+                          )}
+                        </div>
                      </div>
                      <button 
                        onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} 

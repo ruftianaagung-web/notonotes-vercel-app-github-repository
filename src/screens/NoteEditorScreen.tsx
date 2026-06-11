@@ -176,7 +176,31 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
         >
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-4 text-slate-400">
+          {isSaving ? (
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mr-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
+                {t('saving')}
+              </span>
+            </div>
+          ) : hasUnsavedChanges ? (
+            <button 
+              onClick={saveNote}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500 border border-indigo-400 rounded-full hover:bg-indigo-600 transition-colors cursor-pointer mr-2 shadow-lg shadow-indigo-500/20"
+            >
+              <span className="text-sm font-bold uppercase tracking-widest text-white">
+                {t('save')}
+              </span>
+            </button>
+          ) : (
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full mr-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                {t('saved')}
+              </span>
+            </div>
+          )}
           <button
             className="p-3 -mr-2 hover:text-red-400 transition-colors cursor-pointer text-slate-400"
             onClick={() => setShowDeleteConfirm(true)}
@@ -275,32 +299,6 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
               className="hidden" 
             />
           </div>
-
-          {isSaving ? (
-            <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-amber-400">
-                {t('saving')}
-              </span>
-            </div>
-          ) : hasUnsavedChanges ? (
-            <button 
-              onClick={saveNote}
-              className="flex items-center justify-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full hover:bg-indigo-500/20 transition-colors cursor-pointer"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400">
-                {t('save')}
-              </span>
-            </button>
-          ) : (
-            <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-400">
-                {t('saved')}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
-import { Plus, Hash, Tag, FileText, Calendar, Trash2, ArrowUpRight, ArrowDownRight, Wallet, ArrowLeft, MoreVertical, Download, AlertTriangle, ChevronDown, PieChart as PieChartIcon, Activity, Upload, Search, X } from 'lucide-react';
+import { Plus, Hash, Tag, FileText, Calendar, Trash2, ArrowUpRight, ArrowDownRight, Wallet, ArrowLeft, MoreVertical, Download, AlertTriangle, ChevronDown, PieChart as PieChartIcon, Activity, Upload, Search, X, Target } from 'lucide-react';
 import { Transaction } from '../types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -28,10 +28,12 @@ export const translateCategory = (cat: string, lang: 'id' | 'en') => {
 };
 
 export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; onBack: () => void }) {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, clearAllTransactions, lang } = useAppStore();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, clearAllTransactions, lang, savingsTarget, setSavingsTarget } = useAppStore();
   const t = useTranslation(lang);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [targetInputAmount, setTargetInputAmount] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   
   // Time filtering state
@@ -240,21 +242,27 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
 
   return (
     <div className={`flex-1 h-full flex flex-col relative overflow-hidden bg-slate-950`}>
-      <div className={`px-4 sm:px-8 pt-8 pb-4 border-b z-10 relative flex justify-between items-center bg-slate-950 border-slate-800`}>
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-black/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-indigo-400" />
+      <div className={`px-4 sm:px-6 pt-6 pb-4 border-b z-10 relative flex justify-between items-center bg-slate-950 border-slate-800`}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-slate-800 transition-colors text-indigo-400">
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-2xl font-black text-indigo-400">
+          <h2 className="text-xl sm:text-2xl font-black text-indigo-400 tracking-tight">
             {t('financeMenu') as string}
           </h2>
         </div>
         <div className="flex items-center gap-2">
+          <input 
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="hidden sm:block bg-slate-900 py-2 px-3 rounded-xl border border-slate-800 text-sm font-bold outline-none text-slate-50 shadow-sm focus:border-indigo-500/50 transition-colors"
+          />
           <button
             onClick={() => setShowClearConfirm(true)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors text-slate-400 hover:bg-slate-800 hover:text-rose-500"
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-500 hover:border-rose-500/30"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-4 h-4" />
           </button>
           
           <button
@@ -277,38 +285,53 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
-        <div className="mb-4">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+        <div className="mb-4 sm:hidden">
           <input 
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-transparent py-2 px-3 rounded-xl border text-sm font-bold outline-none bg-slate-800 border-slate-700 text-slate-50 uppercase tracking-wider"
+            className="w-full bg-slate-900 py-2.5 px-4 rounded-xl border border-slate-800 text-sm font-bold outline-none text-slate-50 shadow-sm focus:border-indigo-500/50 transition-colors uppercase tracking-wider"
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-          <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-1">{t('balance') as string}</span>
-            <span className="text-sm sm:text-base font-black tracking-tight text-slate-50 truncate w-full">
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                <Wallet className="w-3 h-3 text-indigo-400" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('balance') as string}</span>
+            </div>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-50 truncate w-full">
               {totalBalance < 0 ? '-' : ''}Rp {Math.abs(totalBalance).toLocaleString('id-ID')}
             </span>
           </div>
-          <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500/80 mb-1">{t('income') as string}</span>
-            <span className="text-sm sm:text-base font-bold tracking-tight text-emerald-500 truncate w-full">
+          <div className="p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <ArrowDownRight className="w-3 h-3 text-emerald-500" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('income') as string}</span>
+            </div>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-emerald-500 truncate w-full">
               Rp {totalIncome.toLocaleString('id-ID')}
             </span>
           </div>
-          <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500/80 mb-1">{t('expense') as string}</span>
-            <span className="text-sm sm:text-base font-bold tracking-tight text-rose-500 truncate w-full">
+          <div className="p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                <ArrowUpRight className="w-3 h-3 text-rose-500" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('expense') as string}</span>
+            </div>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-rose-500 truncate w-full">
               Rp {totalExpense.toLocaleString('id-ID')}
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:p-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="md:col-span-2 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className={`text-base font-bold text-slate-50 shrink-0`}>{isSearching ? (t('searchResults') as string) : (t('recentTransactions') as string)}</h3>
@@ -356,36 +379,36 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
 
                   return (
                     <div key={dateKey} className="space-y-3">
-                      <h4 className={`text-sm font-bold ml-2 text-slate-400`}>{dateLabel}</h4>
+                      <h4 className={`text-xs font-bold ml-2 mb-1 text-slate-500 uppercase tracking-wider`}>{dateLabel}</h4>
                       {displayData.groups[dateKey].map(t => (
-                        <div key={t.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all hover:-translate-y-0.5 bg-slate-900 border-slate-800`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                              {t.type === 'income' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                        <div key={t.id} className={`flex items-center justify-between p-3 sm:p-4 rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-lg bg-slate-900 border-slate-800 shadow-sm hover:shadow-black/50`}>
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500 shadow-inner shadow-emerald-500/20' : 'bg-rose-500/10 text-rose-500 shadow-inner shadow-rose-500/20'}`}>
+                              {t.type === 'income' ? <ArrowDownRight className="w-5 h-5 sm:w-6 sm:h-6" /> : <ArrowUpRight className="w-5 h-5 sm:w-6 sm:h-6" />}
                             </div>
                             <div>
-                              <h4 className={`font-bold text-sm text-slate-50`}>{translateCategory(t.category, lang)}</h4>
-                              {t.description && <p className={`text-[11px] mt-0.5 opacity-80 text-slate-400`}>{t.description}</p>}
+                              <h4 className={`font-bold text-sm sm:text-base text-slate-50 leading-tight`}>{translateCategory(t.category, lang)}</h4>
+                              {t.description && <p className={`text-[11px] sm:text-xs mt-1 text-slate-400 line-clamp-1 max-w-[120px] sm:max-w-[200px]`}>{t.description}</p>}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right mr-1">
-                              <span className={`font-bold text-sm block ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          <div className="flex items-center gap-2 sm:gap-4">
+                            <div className="text-right">
+                              <span className={`font-black text-sm sm:text-base block truncate ${t.type === 'income' ? 'text-emerald-500' : 'text-slate-50'}`}>
                                 {t.type === 'income' ? '+' : '-'} {t.currency === 'USD' ? '$' : 'Rp'} {t.amount.toLocaleString(t.currency === 'USD' ? 'en-US' : 'id-ID')}
                               </span>
                             </div>
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-0.5 sm:gap-1">
                               <button 
                                 onClick={() => handleEditClick(t)}
-                                className="p-1.5 text-slate-500 hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-slate-500 hover:text-indigo-400 hover:bg-slate-800 rounded-xl transition-colors"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                               </button>
                               <button 
                                 onClick={() => setShowDeleteConfirm(t.id)}
-                                className="p-1.5 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-colors"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4 sm:w-4 sm:h-4" />
                               </button>
                             </div>
                           </div>
@@ -416,6 +439,68 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
           </div>
 
           <div className="space-y-6">
+            {/* Savings Target Card */}
+            <div className="p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm transition-all hover:bg-slate-800/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-50 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-amber-500" />
+                  {t('savingsTarget') as string}
+                </h3>
+                <button 
+                  onClick={() => {
+                    setTargetInputAmount(savingsTarget ? savingsTarget.toString() : '');
+                    setShowTargetModal(true);
+                  }}
+                  className="text-[11px] font-bold text-slate-400 hover:text-amber-500 transition-colors"
+                >
+                  {t('setSavingsTarget') as string}
+                </button>
+              </div>
+              {savingsTarget ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('targetProgress') as string}</span>
+                      <span className="text-lg font-black tracking-tight text-slate-50">
+                        Rp {Math.max(0, totalBalance).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('targetAmount') as string}</span>
+                      <span className="text-sm font-bold tracking-tight text-slate-400">
+                        Rp {savingsTarget.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2.5 w-full bg-slate-950 rounded-full overflow-hidden relative border border-slate-800">
+                    <div 
+                      className={`h-full absolute left-0 top-0 transition-all duration-1000 ${totalBalance >= savingsTarget ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                      style={{ width: `${Math.min(100, Math.max(0, (totalBalance / savingsTarget) * 100))}%` }}
+                    />
+                  </div>
+                  {totalBalance >= savingsTarget && (
+                    <p className="text-xs font-bold text-amber-500 text-center animate-pulse pt-1">
+                      {t('targetReached') as string} 🎉
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-5 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-xl">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-3 text-balance">Set a trackable savings goal for this month.</p>
+                  <button 
+                    onClick={() => {
+                      setTargetInputAmount('');
+                      setShowTargetModal(true);
+                    }}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {t('setSavingsTarget') as string}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className={`text-base font-bold text-slate-50 flex items-center gap-2`}>
@@ -437,7 +522,7 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                   </button>
                 </div>
               </div>
-              <div className={`p-4 md:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm`}>
+              <div className={`p-5 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm`}>
                 {chartCategories.length === 0 ? (
                   <div className={`text-center py-6 text-slate-400`}>
                     <p className="font-medium text-sm">{t('noCategoryData') as string}</p>
@@ -650,6 +735,60 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                  </button>
               </div>
 
+           </div>
+        </div>
+      )}
+
+      {showTargetModal && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+           {/* Backdrop */}
+           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowTargetModal(false)}></div>
+           
+           <div className={`relative w-full max-w-sm p-4 rounded-2xl border shadow-2xl animate-in fade-in zoom-in duration-200 bg-slate-900 border-slate-800`}>
+              <h3 className={`text-base font-bold mb-4 text-slate-50 flex items-center gap-2`}>
+                <Target className="w-5 h-5 text-amber-500" />
+                {t('setSavingsTarget') as string}
+              </h3>
+              
+              <div className="space-y-4 mb-5">
+                <div>
+                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`}>{t('targetAmount') as string}</label>
+                  <div className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-indigo-500/50`}>
+                    <span className="font-bold text-slate-400 mr-2 text-sm">Rp</span>
+                    <input 
+                      type="number"
+                      value={targetInputAmount}
+                      onChange={e => setTargetInputAmount(e.target.value)}
+                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold"
+                      placeholder="0"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowTargetModal(false)}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-bold transition-colors bg-slate-800 text-slate-400 hover:bg-slate-700`}
+                >
+                  {t('cancel') as string}
+                </button>
+                <button 
+                  onClick={() => {
+                    const val = Number(targetInputAmount);
+                    if (!isNaN(val) && val > 0) {
+                      setSavingsTarget(val);
+                    } else if (targetInputAmount === '') {
+                      setSavingsTarget(null);
+                    }
+                    setShowTargetModal(false);
+                  }}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-bold transition-colors bg-indigo-500 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-500/20`}
+                >
+                  {lang === 'id' ? 'Simpan' : 'Save'}
+                </button>
+              </div>
            </div>
         </div>
       )}

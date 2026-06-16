@@ -37,6 +37,8 @@ interface AppContextType {
   setReminderActive: (val: boolean) => void;
   reminderTime: string;
   setReminderTime: (val: string) => void;
+  savingsTarget: number | null;
+  setSavingsTarget: (val: number | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,9 +124,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return '09:00';
   });
 
+  const [savingsTarget, setSavingsTarget] = useState<number | null>(() => {
+    try {
+      const s = localStorage.getItem('noto_savings_target');
+      if (s !== null) return JSON.parse(s);
+    } catch(e){}
+    return null;
+  });
+
   useEffect(() => { localStorage.setItem('noto_lang', lang); }, [lang]);
   useEffect(() => { localStorage.setItem('noto_reminder_active', JSON.stringify(reminderActive)); }, [reminderActive]);
   useEffect(() => { localStorage.setItem('noto_reminder_time', reminderTime); }, [reminderTime]);
+  useEffect(() => {
+    if (savingsTarget !== null) localStorage.setItem('noto_savings_target', JSON.stringify(savingsTarget));
+    else localStorage.removeItem('noto_savings_target');
+  }, [savingsTarget]);
 
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(() => {
@@ -277,11 +291,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     lang, setLang,
     hasCompletedOnboarding, setHasCompletedOnboarding,
     isUnlocked, setIsUnlocked, streak,
-    reminderActive, setReminderActive, reminderTime, setReminderTime
+    reminderActive, setReminderActive, reminderTime, setReminderTime,
+    savingsTarget, setSavingsTarget
   }), [
     notes, tasks, transactions, user, searchQuery, appPin, lang,
     hasCompletedOnboarding, isUnlocked, streak,
-    reminderActive, reminderTime
+    reminderActive, reminderTime, savingsTarget
   ]);
 
   return (

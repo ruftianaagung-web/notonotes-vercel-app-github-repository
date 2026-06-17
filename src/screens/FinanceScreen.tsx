@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
-import { Plus, Minus, Hash, Tag, FileText, Calendar, Trash2, ArrowUpRight, ArrowDownRight, Wallet, ArrowLeft, MoreVertical, Download, AlertTriangle, ChevronDown, PieChart as PieChartIcon, Activity, Upload, Search, X, Target } from 'lucide-react';
+import { Plus, Minus, Hash, Tag, FileText, Calendar, Trash2, ArrowUpRight, ArrowDownRight, Wallet, ArrowLeft, MoreVertical, Download, AlertTriangle, ChevronDown, PieChart as PieChartIcon, Activity, Upload, Search, X, Target, Edit2 } from 'lucide-react';
 import { Transaction } from '../types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -33,6 +33,7 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
   const t = useTranslation(lang);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showTargetModal, setShowTargetModal] = useState(false);
+  const [showClearTargetConfirm, setShowClearTargetConfirm] = useState(false);
   const [showSavingsDepositModal, setShowSavingsDepositModal] = useState(false);
   const [showSavingsWithdrawModal, setShowSavingsWithdrawModal] = useState(false);
   const [savingsDepositAmount, setSavingsDepositAmount] = useState('');
@@ -307,11 +308,21 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
               <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                 <Wallet className="w-3 h-3 text-indigo-400" />
               </div>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('balance') as string}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{lang === 'id' ? 'Total Uang Kamu' : 'Total Cash'}</span>
             </div>
             <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-50 truncate w-full">
               {totalBalance < 0 ? '-' : ''}Rp {Math.abs(totalBalance).toLocaleString('id-ID')}
             </span>
+            <div className="mt-3 pt-3 border-t border-slate-800/50 flex justify-between items-center text-xs">
+              <div className="flex flex-col">
+                <span className="text-slate-400 font-medium">{lang === 'id' ? 'Tersedia' : 'Available'}</span>
+                <span className="text-slate-50 font-bold truncate max-w-[100px] sm:max-w-[120px]">Rp {(totalBalance - savingsBalance).toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-slate-400 font-medium">{lang === 'id' ? 'Ditabung' : 'Saved'}</span>
+                <span className="text-amber-500 font-bold truncate max-w-[100px] sm:max-w-[120px]">Rp {savingsBalance.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
           </div>
           <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-2">
@@ -490,10 +501,17 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                           setTargetInputTitle(savingsTargetTitle || '');
                           setShowTargetModal(true);
                         }}
-                        className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-amber-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-indigo-400 transition-colors"
                         title={lang === 'id' ? 'Edit Target' : 'Edit Goal'}
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setShowClearTargetConfirm(true)}
+                        className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-rose-500 transition-colors"
+                        title={lang === 'id' ? 'Hapus Target' : 'Delete Goal'}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </>
                   ) : null}
@@ -780,6 +798,47 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
         </div>
       )}
 
+      {showClearTargetConfirm && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+           {/* Backdrop */}
+           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowClearTargetConfirm(false)}></div>
+           
+           <div className={`relative w-full max-w-sm p-4 md:p-4 rounded-3xl border shadow-2xl animate-in fade-in zoom-in duration-200 bg-slate-900 border-slate-800`}>
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4 mx-auto">
+                 <AlertTriangle size={24} />
+              </div>
+              
+              <h3 className="text-xl font-bold text-center mb-2 text-white">
+                {lang === 'id' ? 'Hapus Target?' : 'Delete Target?'}
+              </h3>
+              
+              <p className="text-slate-400 text-sm font-medium text-center text-balance">
+                {lang === 'id' ? 'Apakah kamu yakin ingin menghapus target tabungan ini? Saldo tabungan yang tersimpan akan dikembalikan ke dompet utama.' : 'Are you sure you want to delete this savings goal? The saved balance will be returned to your main wallet.'}
+              </p>
+
+              <div className="flex gap-3 mt-4">
+                 <button 
+                  onClick={() => setShowClearTargetConfirm(false)}
+                  className={`flex-1 py-3 px-4 rounded-xl font-bold transition-colors bg-slate-800 text-slate-400 hover:bg-slate-700`}
+                 >
+                   {t('cancel') as string}
+                 </button>
+                 <button 
+                  onClick={() => {
+                    setSavingsTarget(null);
+                    setSavingsTargetTitle('');
+                    setSavingsBalance(0);
+                    setShowClearTargetConfirm(false);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                 >
+                   {lang === 'id' ? 'Hapus Target' : 'Delete Target'}
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {showTargetModal && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
            {/* Backdrop */}
@@ -950,7 +1009,10 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                   onClick={() => {
                     const val = Number(savingsDepositAmount);
                     if (!isNaN(val) && val > 0) {
-                      setSavingsBalance(prev => prev + val);
+                      setSavingsBalance(prev => {
+                        const available = Math.max(0, totalBalance - prev);
+                        return prev + Math.min(val, available);
+                      });
                     }
                     setShowSavingsDepositModal(false);
                   }}

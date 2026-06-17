@@ -114,7 +114,7 @@ export default function App() {
       };
 
       // 1. Global Daily Reminder
-      if (reminderActive && currentTime >= reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
+      if (reminderActive && currentTime === reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
         localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`);
         const todayTasks = tasks.filter(t => {
             if (t.date === 'Hari ini' || t.date.toLowerCase() === 'today' || t.repeat === 'daily') return true;
@@ -147,8 +147,8 @@ export default function App() {
         }
 
         if (isToday) {
-           // Fire if currentTime is past the alarmTime, so we don't miss it due to interval throttling
-           if (currentTime >= task.alarmTime) {
+           // Fire if currentTime matches the alarmTime
+           if (currentTime === task.alarmTime) {
              const alarmKey = `noto_alarm_${task.id}_${todayDate}`;
              if (!localStorage.getItem(alarmKey)) {
                localStorage.setItem(alarmKey, 'true');

@@ -324,25 +324,41 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
               </div>
             </div>
           </div>
-          <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+          <div 
+            role="button"
+            onClick={() => {
+              setChartType('income');
+              document.getElementById('finance-chart')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="w-full p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center text-left hover:-translate-y-1 hover:shadow-lg transition-all hover:border-emerald-500/50 relative overflow-hidden group cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="flex items-center gap-2 mb-2 relative z-10 pointer-events-none">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
                 <ArrowDownRight className="w-3 h-3 text-emerald-500" />
               </div>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('income') as string}</span>
             </div>
-            <span className="text-sm sm:text-xl font-black tracking-tight text-emerald-500 truncate w-full">
+            <span className="text-sm sm:text-lg lg:text-xl font-black tracking-tight text-emerald-500 truncate w-full relative z-10 pointer-events-none">
               Rp {totalIncome.toLocaleString('id-ID')}
             </span>
           </div>
-          <div className="p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center">
+          <div 
+            role="button"
+            onClick={() => {
+              setChartType('expense');
+              document.getElementById('finance-chart')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="w-full p-3 sm:p-4 rounded-2xl border bg-slate-900 border-slate-800 shadow-sm flex flex-col justify-center text-left hover:-translate-y-1 hover:shadow-lg transition-all hover:border-rose-500/50 relative overflow-hidden group cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="flex items-center gap-2 mb-2 relative z-10 pointer-events-none">
+              <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
                 <ArrowUpRight className="w-3 h-3 text-rose-500" />
               </div>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{t('expense') as string}</span>
             </div>
-            <span className="text-sm sm:text-xl font-black tracking-tight text-rose-500 truncate w-full">
+            <span className="text-sm sm:text-lg lg:text-xl font-black tracking-tight text-rose-500 truncate w-full relative z-10 pointer-events-none">
               Rp {totalExpense.toLocaleString('id-ID')}
             </span>
           </div>
@@ -560,7 +576,7 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
               )}
             </div>
 
-            <div className="space-y-4">
+            <div id="finance-chart" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className={`text-base font-bold text-slate-50 flex items-center gap-2`}>
                   <PieChartIcon className="w-5 h-5 text-indigo-500" />
@@ -698,11 +714,10 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                         type="number"
                         value={amount}
                         onChange={e => setAmount(e.target.value)}
-                        className="bg-transparent text-sm outline-none text-slate-50 font-semibold text-right"
-                        style={{ width: amount ? `${Math.max(2, amount.length)}ch` : '2ch', minWidth: '40px', maxWidth: '100%' }}
+                        className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold text-right"
                         placeholder="0"
                       />
-                      {currency === 'IDR' && <span className="text-sm font-semibold text-slate-400 ml-0.5">.000</span>}
+                      {currency === 'IDR' && <span className="text-sm font-semibold text-slate-400 ml-0.5 shrink-0">.000</span>}
                     </div>
                   </div>
                   {error && <p className="text-rose-500 text-[10px] mt-1">{error}</p>}

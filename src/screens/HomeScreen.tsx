@@ -363,8 +363,14 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                      <div className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
                         <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <p className="text-[10px] text-slate-500 font-mono">
-                            {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
+                          <p className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                            <span>{task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}</span>
+                            {task.alarmTime && (
+                              <span className="flex items-center gap-0.5 ml-1 text-slate-400 bg-slate-800/50 px-1 py-0.5 rounded font-bold">
+                                <Bell className="w-2.5 h-2.5" />
+                                {task.alarmTime}
+                              </span>
+                            )}
                           </p>
                           {task.repeat === 'daily' && (
                             <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 text-indigo-400 bg-indigo-500/10 flex items-center gap-1">

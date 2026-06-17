@@ -117,7 +117,7 @@ export default function App() {
       if (reminderActive && currentTime === reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
         localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`);
         const todayTasks = tasks.filter(t => {
-            if (t.date === 'Hari ini' || t.date.toLowerCase() === 'today' || t.repeat === 'daily') return true;
+            if (t.date === 'Hari ini' || (t.date && t.date.toLowerCase() === 'today') || t.repeat === 'daily') return true;
             return t.date === todayDate;
         });
         const allCompleted = todayTasks.length > 0 && todayTasks.every(t => t.completed);
@@ -142,12 +142,12 @@ export default function App() {
 
         // Check if the task is scheduled for today
         let isToday = false;
-        if (task.date === 'Hari ini' || task.date.toLowerCase() === 'today' || task.date === todayDate || task.repeat === 'daily') {
+        if (task.date === 'Hari ini' || (task.date && task.date.toLowerCase() === 'today') || task.date === todayDate || task.repeat === 'daily') {
           isToday = true;
         }
 
         if (isToday) {
-           // Fire if currentTime matches the alarmTime
+           // Fire if currentTime matches the alarmTime exactly (interval is 10s so we won't miss the minute)
            if (currentTime === task.alarmTime) {
              const alarmKey = `noto_alarm_${task.id}_${todayDate}`;
              if (!localStorage.getItem(alarmKey)) {
@@ -322,7 +322,7 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
   };
 
   const handleForgotPinSubmit = () => {
-    if (forgotNameInput.toLowerCase() === user.name.toLowerCase()) {
+    if (forgotNameInput.toLowerCase() === (user?.name || '').toLowerCase()) {
       setAppPin(null);
       setForgotModalVisible(false);
     } else {

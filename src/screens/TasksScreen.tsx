@@ -31,6 +31,17 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
        if (newTaskAlarm && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
          Notification.requestPermission().catch(() => {});
        }
+       
+       const now = new Date();
+       const currentHour = now.getHours().toString().padStart(2, '0');
+       const currentMinute = now.getMinutes().toString().padStart(2, '0');
+       const currentTime = `${currentHour}:${currentMinute}`;
+       const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+       const todayDate = localDate.toISOString().split('T')[0];
+
+       // Prevent immediate notification if user schedules an alarm in the past
+       const isTodayTask = newTaskDate === 'Hari ini' || newTaskDate.toLowerCase() === 'today' || newTaskDate === todayDate || newTaskRepeat === 'daily';
+
        if (editingTask) {
          updateTask({
            ...editingTask,
@@ -40,10 +51,14 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            date: newTaskDate,
            alarmTime: newTaskAlarm || undefined
          });
+         if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
+           localStorage.setItem(`noto_alarm_${editingTask.id}_${todayDate}`, 'true');
+         }
        } else {
          const locale = lang === 'en' ? 'en-US' : 'id-ID';
+         const newId = crypto.randomUUID();
          addTask({
-           id: crypto.randomUUID(),
+           id: newId,
            title: newTaskTitle.trim(),
            completed: false,
            priority: newTaskPriority,
@@ -52,6 +67,9 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            repeat: newTaskRepeat,
            alarmTime: newTaskAlarm || undefined
          });
+         if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
+           localStorage.setItem(`noto_alarm_${newId}_${todayDate}`, 'true');
+         }
        }
     }
     setNewTaskTitle('');

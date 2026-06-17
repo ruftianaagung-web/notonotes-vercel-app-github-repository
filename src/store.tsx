@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Note, Task, User, Transaction } from './types';
+import { Note, Task, User, Transaction, MoodEntry } from './types';
 import { currentUser, recentNotes, allTasks } from './data';
 
 interface AppContextType {
   notes: Note[];
   tasks: Task[];
   transactions: Transaction[];
+  moods: MoodEntry[];
   user: User;
   updateUser: (u: User) => void;
   addNote: (note: Note) => void;
@@ -15,6 +16,7 @@ interface AppContextType {
   updateTask: (task: Task) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  setMood: (date: string, mood: MoodEntry['mood'], note?: string) => void;
   addTransaction: (transaction: Transaction) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -98,6 +100,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (s) {
         return JSON.parse(s);
       }
+    } catch(e){}
+    return [];
+  });
+
+  const [moods, setMoods] = useState<MoodEntry[]>(() => {
+    try {
+      const s = localStorage.getItem('noto_moods');
+      if (s) return JSON.parse(s);
     } catch(e){}
     return [];
   });
@@ -224,6 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { localStorage.setItem('noto_notes', JSON.stringify(notes)); }, [notes]);
   useEffect(() => { localStorage.setItem('noto_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('noto_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem('noto_moods', JSON.stringify(moods)); }, [moods]);
   useEffect(() => { if (appPin) localStorage.setItem('noto_pin', appPin); else localStorage.removeItem('noto_pin'); }, [appPin]);
   useEffect(() => { localStorage.setItem('noto_streak', streak.toString()); }, [streak]);
   useEffect(() => { if (lastTaskCompleted) localStorage.setItem('noto_last_task_completed', lastTaskCompleted); }, [lastTaskCompleted]);
@@ -279,6 +290,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const deleteTask = (id: string) => setTasks(prev => prev.filter(t => t.id !== id));
 
+  const setMood = (date: string, mood: MoodEntry['mood'], note?: string) => {
+    setMoods(prev => {
+      const existingIndex = prev.findIndex(m => m.date === date);
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = { ...next[existingIndex], mood, note: note ?? next[existingIndex].note };
+        return next;
+      } else {
+        return [...prev, { date, mood, note }];
+      }
+    });
+  };
+
   const addTransaction = (t: Transaction) => setTransactions(prev => [t, ...prev]);
   const updateTransaction = (id: string, updates: Partial<Transaction>) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   const deleteTransaction = (id: string) => setTransactions(prev => prev.filter(t => t.id !== id));
@@ -296,6 +320,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('noto_notes', '[]');
     localStorage.setItem('noto_tasks', '[]');
     localStorage.setItem('noto_transactions', '[]');
+    localStorage.setItem('noto_moods', '[]');
     localStorage.setItem('noto_streak', '0');
     localStorage.removeItem('noto_last_task_completed');
     localStorage.removeItem('noto_pin');
@@ -303,6 +328,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotes([]);
     setTasks([]);
     setTransactions([]);
+    setMoods([]);
     setStreak(0);
     setLastTaskCompleted(null);
     setAppPin(null);
@@ -311,9 +337,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const contextValue = React.useMemo(() => ({
-    notes, tasks, transactions, user, updateUser: setUser,
+    notes, tasks, transactions, moods, user, updateUser: setUser,
     addNote, updateNote, deleteNote, 
-    addTask, updateTask, toggleTask, deleteTask,
+    addTask, updateTask, toggleTask, deleteTask, setMood,
     addTransaction, updateTransaction, deleteTransaction, clearAllTransactions, importTransactions,
     importData, clearAllData,
     searchQuery, setSearchQuery, appPin, setAppPin,
@@ -324,7 +350,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     savingsTarget, setSavingsTarget, savingsTargetTitle, setSavingsTargetTitle,
     savingsBalance, setSavingsBalance
   }), [
-    notes, tasks, transactions, user, searchQuery, appPin, lang,
+    notes, tasks, transactions, moods, user, searchQuery, appPin, lang,
     hasCompletedOnboarding, isUnlocked, streak,
     reminderActive, reminderTime, savingsTarget, savingsTargetTitle, savingsBalance
   ]);

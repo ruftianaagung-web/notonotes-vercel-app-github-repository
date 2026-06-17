@@ -1,5 +1,13 @@
 export type Priority = 'Tinggi' | 'Sedang' | 'Rendah';
 
+export type Mood = 'excellent' | 'good' | 'neutral' | 'bad' | 'terrible' | null;
+
+export interface MoodEntry {
+  date: string; // ISO date YYYY-MM-DD
+  mood: Mood;
+  note?: string;
+}
+
 export interface User {
   name: string;
   avatarUrl: string;

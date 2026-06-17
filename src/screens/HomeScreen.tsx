@@ -12,8 +12,25 @@ interface HomeProps {
   onNavigate: (screen: 'home' | 'tasks' | 'search' | 'calendar' | 'settings' | 'finance') => void;
 }
 
+const getMoodIcon = (id: string, className = "w-6 h-6") => {
+  switch (id) {
+    case 'excellent':
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    case 'good':
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 1 4 1 4-1 4-1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    case 'neutral':
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    case 'bad':
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-1 4-1 4 1 4 1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    case 'terrible':
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    default:
+      return null;
+  }
+};
+
 export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNavigate }: HomeProps) {
-  const { notes, tasks, user, updateUser, toggleTask, deleteTask, deleteNote, setSearchQuery, streak, lang } = useAppStore();
+  const { notes, tasks, moods, setMood, user, updateUser, toggleTask, deleteTask, deleteNote, setSearchQuery, streak, lang } = useAppStore();
   const t = useTranslation(lang);
   
   // Use the current user from the store instead of static data
@@ -330,6 +347,40 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                 <div className="h-full bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={{ width: `${progressPercent}%` }}></div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mood Tracker */}
+        <div className="mb-6 rounded-2xl bg-slate-900 border border-slate-800 p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+              <span className="text-lg">🎭</span> {t('dailyMood') || 'Mood Hari Ini'}
+            </h3>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: 'excellent', label: 'Sangat Baik', colors: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20' },
+              { id: 'good', label: 'Baik', colors: 'bg-teal-500/10 text-teal-400 border-teal-500/30 hover:bg-teal-500/20' },
+              { id: 'neutral', label: 'Biasa', colors: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20' },
+              { id: 'bad', label: 'Buruk', colors: 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20' },
+              { id: 'terrible', label: 'Sangat Buruk', colors: 'bg-rose-500/10 text-rose-500 border-rose-500/30 hover:bg-rose-500/20' }
+            ].map(m => {
+              const currentMood = moods.find(x => x.date === todayStr)?.mood;
+              const isSelected = currentMood === m.id;
+              const notSelectedOpacity = currentMood && !isSelected ? 'opacity-40 grayscale' : '';
+              
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setMood(todayStr, m.id as any)}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 font-bold transition-all disabled:opacity-50 ${m.colors} ${isSelected ? 'scale-110 shadow-sm border-current' : 'border-transparent'} ${notSelectedOpacity}`}
+                  title={m.label}
+                >
+                  <div className="mb-1">{getMoodIcon(m.id, isSelected ? "w-6 h-6" : "w-5 h-5")}</div>
+                  {isSelected && <span className="text-[10px] whitespace-nowrap">{m.label}</span>}
+                </button>
+              )
+            })}
           </div>
         </div>
 

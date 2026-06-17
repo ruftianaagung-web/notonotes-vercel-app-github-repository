@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 export default function CalendarScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { tasks, lang, streak } = useAppStore();
+  const { tasks, moods, lang, streak } = useAppStore();
   const t = useTranslation(lang);
 
   const locale = lang === 'en' ? 'en-US' : 'id-ID';
@@ -24,6 +24,69 @@ export default function CalendarScreen() {
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
+
+  const getMonthlyAverageMood = () => {
+    const monthMoods = moods.filter(m => {
+      const d = new Date(m.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    if (monthMoods.length === 0) return null;
+
+    const weights: Record<string, number> = {
+      'excellent': 5,
+      'good': 4,
+      'neutral': 3,
+      'bad': 2,
+      'terrible': 1
+    };
+
+    const reverseWeights: Record<number, string> = {
+      5: 'excellent',
+      4: 'good',
+      3: 'neutral',
+      2: 'bad',
+      1: 'terrible'
+    };
+
+    const sum = monthMoods.reduce((acc, curr) => acc + (weights[curr.mood || ''] || 0), 0);
+    const avg = Math.round(sum / monthMoods.length);
+    return reverseWeights[avg] || null;
+  };
+
+  const avgMood = getMonthlyAverageMood();
+
+  const getMoodIcon = (id: string, className = "w-6 h-6") => {
+    switch (id) {
+      case 'excellent': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+      case 'good': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 1 4 1 4-1 4-1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+      case 'neutral': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+      case 'bad': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-1 4-1 4 1 4 1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+      case 'terrible': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+      default: return null;
+    }
+  };
+
+  const getMoodLabel = (id: string | null) => {
+    switch (id) {
+       case 'excellent': return 'Sangat Baik';
+       case 'good': return 'Baik';
+       case 'neutral': return 'Biasa';
+       case 'bad': return 'Buruk';
+       case 'terrible': return 'Sangat Buruk';
+       default: return 'Tidak Ada Data';
+    }
+  };
+
+  const getMoodColorClass = (id: string | null) => {
+    switch (id) {
+       case 'excellent': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30';
+       case 'good': return 'text-teal-400 bg-teal-500/10 border-teal-500/30';
+       case 'neutral': return 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30';
+       case 'bad': return 'text-orange-400 bg-orange-500/10 border-orange-500/30';
+       case 'terrible': return 'text-rose-500 bg-rose-500/10 border-rose-500/30';
+       default: return 'text-slate-500 bg-slate-800/30 border-slate-700/30';
+    }
+  };
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -143,15 +206,22 @@ export default function CalendarScreen() {
                   {blanks.map((_, i) => (
                     <div key={`blank-${i}`} className="flex items-center justify-center"></div>
                   ))}
-                  {days.map((day) => (
-                    <Day 
-                      key={day} 
-                      num={day.toString()} 
-                      active={isSelectedDate(day)} 
-                      isToday={isTodayDate(day)}
-                      onClick={() => handleSelectDay(day)}
-                    />
-                  ))}
+                  {days.map((day) => {
+                    const cellDateObj = new Date(currentYear, currentMonth, day);
+                    const cellDateStr = new Date(cellDateObj.getTime() - (cellDateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    const dayMood = moods.find(m => m.date === cellDateStr)?.mood;
+
+                    return (
+                      <Day 
+                        key={day} 
+                        num={day.toString()} 
+                        active={isSelectedDate(day)} 
+                        isToday={isTodayDate(day)}
+                        onClick={() => handleSelectDay(day)}
+                        mood={dayMood}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
@@ -169,6 +239,24 @@ export default function CalendarScreen() {
                 <div className="flex flex-col items-end">
                    <span className="text-3xl md:text-4xl font-black text-orange-400 tracking-tighter">{streak}</span>
                    <span className="text-[10px] md:text-xs uppercase font-bold text-orange-400/70 tracking-widest">{t('days')}</span>
+                </div>
+              </div>
+
+              {/* Monthly Average Mood */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 md:p-4 md:p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border border-transparent ${getMoodColorClass(avgMood)}`}>
+                     {getMoodIcon(avgMood || 'neutral', "w-6 h-6 md:w-8 md:h-8")}
+                   </div>
+                   <div>
+                     <h4 className="text-slate-50 font-bold md:text-xl">Rata-rata Mood</h4>
+                     <p className="text-xs md:text-sm text-slate-400">Dalam bulan ini</p>
+                   </div>
+                </div>
+                <div className="flex flex-col items-end">
+                   <span className={`text-xl md:text-2xl font-black tracking-tighter text-right ${avgMood ? getMoodColorClass(avgMood).split(' ')[0] : 'text-slate-500'}`}>
+                     {getMoodLabel(avgMood)}
+                   </span>
                 </div>
               </div>
             </div>
@@ -267,16 +355,35 @@ export default function CalendarScreen() {
   );
 }
 
-const Day: React.FC<{ num: string, mute?: boolean, active?: boolean, isToday?: boolean, onClick?: () => void }> = ({ num, mute = false, active = false, isToday = false, onClick }) => {
+const Day: React.FC<{ num: string, mute?: boolean, active?: boolean, isToday?: boolean, onClick?: () => void, mood?: string | null }> = ({ num, mute = false, active = false, isToday = false, onClick, mood }) => {
+  const getMoodColor = () => {
+    switch(mood) {
+      case 'excellent': return 'bg-emerald-500';
+      case 'good': return 'bg-teal-400';
+      case 'neutral': return 'bg-indigo-400';
+      case 'bad': return 'bg-orange-400';
+      case 'terrible': return 'bg-rose-500';
+      default: return 'bg-transparent';
+    }
+  };
+
   return (
     <div className="flex items-center justify-center">
-      <div onClick={onClick} className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl text-xs md:text-sm font-bold transition-all relative ${
+      <div onClick={onClick} className={`w-8 h-8 md:w-12 md:h-12 flex flex-col items-center justify-center rounded-xl md:rounded-2xl transition-all relative ${
         active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 
         mute ? 'text-slate-700' : 
         'text-slate-300 hover:bg-slate-800 hover:text-slate-50 cursor-pointer'
       }`}>
-        {num}
-        {isToday && !active && <div className="absolute -bottom-1 md:-bottom-2 w-1 h-1 md:w-1.5 md:h-1.5 bg-indigo-500 rounded-full"></div>}
+        <span className="text-xs md:text-sm font-bold">{num}</span>
+        {mood && !active && (
+          <div className={`w-1.5 h-1.5 md:w-2 md:h-2 mt-0.5 md:mt-1 rounded-full ${getMoodColor()}`}></div>
+        )}
+        {active && mood && (
+          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-slate-950 rounded-full flex items-center justify-center">
+             <div className={`w-1.5 h-1.5 rounded-full ${getMoodColor()}`}></div>
+          </div>
+        )}
+        {isToday && !active && !mood && <div className="absolute -bottom-1 md:-bottom-2 w-1 h-1 md:w-1.5 md:h-1.5 bg-indigo-500 rounded-full"></div>}
       </div>
     </div>
   );

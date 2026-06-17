@@ -699,8 +699,8 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                 </div>
 
                 <div>
-                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`}>{t('amount') as string}</label>
-                  <div className={`flex items-center px-3 py-2.5 rounded-xl border ${'bg-slate-950 border-slate-800'} focus-within:border-indigo-500/50`}>
+                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`} htmlFor="txAmountInput">{t('amount') as string}</label>
+                  <label htmlFor="txAmountInput" className={`flex items-center px-3 py-2.5 rounded-xl border ${'bg-slate-950 border-slate-800'} focus-within:border-indigo-500/50 cursor-text`}>
                     <select 
                       value={currency} 
                       onChange={e => setCurrency(e.target.value as 'IDR' | 'USD')}
@@ -709,17 +709,18 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                       <option value="IDR">Rp</option>
                       <option value="USD">$</option>
                     </select>
-                    <div className="flex-1 flex items-center pr-3">
+                    <div className="flex-1 flex items-center pr-3 cursor-text">
                       <input 
+                        id="txAmountInput"
                         type="number"
                         value={amount}
                         onChange={e => setAmount(e.target.value)}
-                        className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold text-right"
+                        className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold flex-1 cursor-text"
                         placeholder="0"
                       />
                       {currency === 'IDR' && <span className="text-sm font-semibold text-slate-400 ml-0.5 shrink-0">.000</span>}
                     </div>
-                  </div>
+                  </label>
                   {error && <p className="text-rose-500 text-[10px] mt-1">{error}</p>}
                 </div>
 
@@ -880,17 +881,18 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
                   </div>
                 </div>
                 <div>
-                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`}>{t('targetAmount') as string}</label>
-                  <div className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-indigo-500/50`}>
+                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`} htmlFor="txTargetAmount">{t('targetAmount') as string}</label>
+                  <label htmlFor="txTargetAmount" className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-indigo-500/50 cursor-text`}>
                     <span className="font-bold text-slate-400 mr-2 text-sm">Rp</span>
                     <input 
+                      id="txTargetAmount"
                       type="number"
                       value={targetInputAmount}
                       onChange={e => setTargetInputAmount(e.target.value)}
-                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold"
+                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold cursor-text"
                       placeholder="0"
                     />
-                  </div>
+                  </label>
                 </div>
               </div>
 
@@ -998,18 +1000,19 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
               
               <div className="space-y-4 mb-5">
                 <div>
-                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`}>{lang === 'id' ? 'Jumlah (Rp)' : 'Amount (Rp)'}</label>
-                  <div className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-emerald-500/50`}>
+                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`} htmlFor="depInput">{lang === 'id' ? 'Jumlah (Rp)' : 'Amount (Rp)'}</label>
+                  <label htmlFor="depInput" className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-emerald-500/50 cursor-text`}>
                     <span className="font-bold text-slate-400 mr-2 text-sm">Rp</span>
                     <input 
+                      id="depInput"
                       type="number"
                       value={savingsDepositAmount}
                       onChange={e => setSavingsDepositAmount(e.target.value)}
-                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold"
+                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold cursor-text"
                       placeholder="0"
                       autoFocus
                     />
-                  </div>
+                  </label>
                 </div>
               </div>
 
@@ -1053,18 +1056,19 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
               
               <div className="space-y-4 mb-5">
                 <div>
-                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`}>{lang === 'id' ? 'Jumlah (Rp)' : 'Amount (Rp)'}</label>
-                  <div className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-rose-500/50`}>
+                  <label className={`block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-400`} htmlFor="wdInput">{lang === 'id' ? 'Jumlah (Rp)' : 'Amount (Rp)'}</label>
+                  <label htmlFor="wdInput" className={`flex items-center px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 focus-within:border-rose-500/50 cursor-text`}>
                     <span className="font-bold text-slate-400 mr-2 text-sm">Rp</span>
                     <input 
+                      id="wdInput"
                       type="number"
                       value={savingsWithdrawAmount}
                       onChange={e => setSavingsWithdrawAmount(e.target.value)}
-                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold"
+                      className="w-full bg-transparent text-sm outline-none text-slate-50 font-semibold cursor-text"
                       placeholder="0"
                       autoFocus
                     />
-                  </div>
+                  </label>
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -166,6 +166,30 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
     });
   };
 
+  const allExistingTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    notes.forEach(n => {
+      n.tags?.forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet);
+  }, [notes]);
+  
+  const suggestedTags = useMemo(() => {
+    const defaultTags = ['#penting', '#ide', '#kerja', '#pribadi', '#tugas'];
+    const combinedTags = Array.from(new Set([...allExistingTags, ...defaultTags]));
+    return combinedTags.filter(t => !tags.includes(t)).slice(0, 8);
+  }, [allExistingTags, tags]);
+
+  const handleAddExistingTag = (tag: string) => {
+    if (!tags.includes(tag)) {
+      setTags(prev => {
+        const newTags = [...prev, tag];
+        setHasUnsavedChanges(true);
+        return newTags;
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">
       {/* Top Bar */}
@@ -222,42 +246,61 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
           />
 
           {/* Tags */}
-          <div className="flex flex-wrap items-center gap-2 mb-8">
-            {tags.map((tag) => (
-              <div
-                key={tag}
-                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg group"
-              >
-                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">
-                  {tag.replace("#", "")}
-                </span>
-                <button
-                  onClick={() => handleRemoveTag(tag)}
-                  className="w-4 h-4 flex items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-red-500/80 hover:text-white transition-colors"
+          <div className="flex flex-col gap-3 mb-8">
+            <div className="flex flex-wrap items-center gap-2">
+              {tags.map((tag) => (
+                <div
+                  key={tag}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg group"
                 >
-                  &times;
+                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">
+                    {tag.replace("#", "")}
+                  </span>
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="w-4 h-4 flex items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-red-500/80 hover:text-white transition-colors"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              {isAddingTag ? (
+                <form onSubmit={handleAddTagSubmit} className="flex items-center">
+                  <input
+                    type="text"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    autoFocus
+                    onBlur={handleAddTagSubmit}
+                    placeholder={t('tagNamePlaceholder')}
+                    className="h-7 w-24 px-2 bg-slate-900 border border-indigo-500 rounded-lg text-[10px] text-slate-50 outline-none"
+                  />
+                </form>
+              ) : (
+                <button
+                  onClick={() => setIsAddingTag(true)}
+                  className="h-7 px-3 flex items-center justify-center rounded-lg border border-dashed border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-wider hover:border-slate-500 transition-colors cursor-pointer"
+                >
+                  + Tag
                 </button>
+              )}
+            </div>
+
+            {suggestedTags.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Rekomendasi:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => handleAddExistingTag(tag)}
+                      className="px-2 py-1 rounded-md border border-slate-800 bg-slate-900/50 text-[10px] text-slate-400 font-bold uppercase tracking-wider hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      +{tag.replace("#", "")}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-            {isAddingTag ? (
-              <form onSubmit={handleAddTagSubmit} className="flex items-center">
-                <input
-                  type="text"
-                  value={newTagInput}
-                  onChange={(e) => setNewTagInput(e.target.value)}
-                  autoFocus
-                  onBlur={handleAddTagSubmit}
-                  placeholder={t('tagNamePlaceholder')}
-                  className="h-7 w-24 px-2 bg-slate-900 border border-indigo-500 rounded-lg text-[10px] text-slate-50 outline-none"
-                />
-              </form>
-            ) : (
-              <button
-                onClick={() => setIsAddingTag(true)}
-                className="h-7 px-3 flex items-center justify-center rounded-lg border border-dashed border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-wider hover:border-slate-500 transition-colors cursor-pointer"
-              >
-                + Tag
-              </button>
             )}
           </div>
 

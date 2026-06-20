@@ -19,6 +19,7 @@ export default defineConfig(() => {
           theme_color: '#020617',
           background_color: '#020617',
           display: 'standalone',
+          start_url: '/',
           icons: [
             {
               src: 'icon.png',
@@ -30,7 +31,8 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-          maximumFileSizeToCacheInBytes: 5000000
+          maximumFileSizeToCacheInBytes: 5000000,
+          navigateFallback: '/index.html'
         },
         devOptions: {
           enabled: true,

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Home, CheckCircle2, Calendar as CalendarIcon, Settings, Lock, Layers, Bell, X, Wallet } from 'lucide-react';
+import { Home, CheckCircle2, Calendar as CalendarIcon, Settings, Lock, Layers, Bell, X, Wallet, WifiOff } from 'lucide-react';
 import HomeScreen from './screens/HomeScreen';
 import TasksScreen from './screens/TasksScreen';
 import CalendarScreen from './screens/CalendarScreen';
@@ -205,6 +205,7 @@ export default function App() {
 
   return (
     <div className={`w-full h-[100dvh] flex flex-col md:flex-row ${getThemeClass()} text-slate-200 font-sans relative overflow-hidden`}>
+      <OfflineIndicator lang={lang} />
       
       {inAppAlarm && inAppAlarm.isAlarm && (
         <div className="absolute inset-0 z-[999] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -340,6 +341,7 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
 
   return (
     <div className={`min-h-screen flex justify-center items-center ${getThemeClass()} relative`}>
+      <OfflineIndicator lang={lang} />
       <div className="w-full max-w-[480px] min-h-[100dvh] relative flex flex-col items-center justify-center text-slate-200 font-sans p-8 shadow-2xl sm:border-x border-slate-800 bg-slate-950">
         <Lock className="w-12 h-12 text-indigo-500 mb-6" />
         <h2 className="text-xl font-bold tracking-tight mb-2">{t('pinLocked')}</h2>
@@ -415,6 +417,35 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function OfflineIndicator({ lang }: { lang: 'id' | 'en' }) {
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  if (!isOffline) return null;
+
+  return (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] bg-slate-900 border border-slate-800 shadow-xl shadow-slate-950/50 rounded-full px-4 py-2 flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+      <WifiOff className="w-3.5 h-3.5 text-slate-400" />
+      <span className="text-xs font-bold tracking-wide text-slate-300">
+        {lang === 'id' ? 'OFFLINE' : 'OFFLINE'}
+      </span>
     </div>
   );
 }

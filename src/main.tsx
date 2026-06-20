@@ -5,13 +5,11 @@ import App from './App.tsx';
 import './index.css';
 import { AppProvider } from './store.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
+// @ts-ignore
+import { registerSW } from 'virtual:pwa-register';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
-      console.log('SW registration failed: ', err);
-    });
-  });
+  registerSW({ immediate: true });
 }
 
 createRoot(document.getElementById('root')!).render(

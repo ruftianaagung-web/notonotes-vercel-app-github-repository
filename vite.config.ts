@@ -32,7 +32,10 @@ export default defineConfig(() => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
           maximumFileSizeToCacheInBytes: 5000000,
-          navigateFallback: '/index.html'
+          navigateFallback: '/index.html',
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true
         },
         devOptions: {
           enabled: true,

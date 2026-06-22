@@ -28,11 +28,13 @@ export interface Task {
   title: string;
   time: string;
   date: string; // 'Hari ini', 'Besok', etc or ISO date
+  createdAt?: string;
   priority: Priority;
   completed: boolean;
   pinned?: boolean;
   repeat?: 'once' | 'daily';
   alarmTime?: string;
+  completedDates?: string[];
 }
 
 export interface Transaction {

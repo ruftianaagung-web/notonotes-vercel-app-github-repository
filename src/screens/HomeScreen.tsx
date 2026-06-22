@@ -124,7 +124,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   };
 
   const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [hasSeenUpdate120, setHasSeenUpdate120] = useState(() => localStorage.getItem('noto_update_1_2_0') === 'true');
+  const [hasSeenUpdate121, setHasSeenUpdate121] = useState(() => localStorage.getItem('noto_update_1_2_1') === 'true');
 
   const particleData = React.useMemo(() => {
     return [...Array(15)].map((_, i) => ({
@@ -310,7 +310,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
           </button>
           <button className="p-3 -mr-2 text-slate-400 hover:text-slate-50 transition-colors relative" onClick={() => setShowNotificationModal(true)}>
             <Bell className="w-5 h-5" />
-            {!hasSeenUpdate120 && <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border border-slate-900"></span>}
+            {!hasSeenUpdate121 && <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border border-slate-900"></span>}
           </button>
         </div>
       </div>
@@ -551,35 +551,35 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
       {showNotificationModal && (
         <div className="absolute inset-0 bg-slate-950/95 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-200 p-4 md:p-5" onClick={() => {
           setShowNotificationModal(false);
-          if (!hasSeenUpdate120) {
-            localStorage.setItem('noto_update_1_2_0', 'true');
-            setHasSeenUpdate120(true);
+          if (!hasSeenUpdate121) {
+            localStorage.setItem('noto_update_1_2_1', 'true');
+            setHasSeenUpdate121(true);
           }
         }}>
            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-4 md:p-4 w-full max-w-sm flex flex-col shadow-2xl relative items-center text-center" onClick={e => e.stopPropagation()}>
               <button 
                 onClick={() => {
                   setShowNotificationModal(false);
-                  if (!hasSeenUpdate120) {
-                    localStorage.setItem('noto_update_1_2_0', 'true');
-                    setHasSeenUpdate120(true);
+                  if (!hasSeenUpdate121) {
+                    localStorage.setItem('noto_update_1_2_1', 'true');
+                    setHasSeenUpdate121(true);
                   }
                 }}
                 className="absolute top-4 right-4 text-slate-500 hover:text-slate-50"
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className={`w-12 h-12 ${!hasSeenUpdate120 ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'} rounded-2xl flex items-center justify-center mb-6`}>
+              <div className={`w-12 h-12 ${!hasSeenUpdate121 ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'} rounded-2xl flex items-center justify-center mb-6`}>
                 <Bell className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-50 mb-2">{!hasSeenUpdate120 ? t('appUpdateTitle') : t('noNotification')}</h3>
-              <p className="text-sm text-slate-400 mb-6">{!hasSeenUpdate120 ? t('appUpdateBody') : t('allNotificationRead')}</p>
+              <h3 className="text-lg font-bold text-slate-50 mb-2">{!hasSeenUpdate121 ? t('appUpdateTitle') : t('noNotification')}</h3>
+              <p className="text-sm text-slate-400 mb-6">{!hasSeenUpdate121 ? t('appUpdateBody') : t('allNotificationRead')}</p>
               <button 
                 onClick={() => {
                   setShowNotificationModal(false);
-                  if (!hasSeenUpdate120) {
-                    localStorage.setItem('noto_update_1_2_0', 'true');
-                    setHasSeenUpdate120(true);
+                  if (!hasSeenUpdate121) {
+                    localStorage.setItem('noto_update_1_2_1', 'true');
+                    setHasSeenUpdate121(true);
                   }
                 }}
                 className="w-full py-4 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"

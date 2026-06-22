@@ -63,6 +63,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            completed: false,
            priority: newTaskPriority,
            date: newTaskDate,
+           createdAt: todayDate,
            time: new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
            repeat: newTaskRepeat,
            alarmTime: newTaskAlarm || undefined

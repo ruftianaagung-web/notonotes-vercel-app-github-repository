@@ -250,7 +250,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!task) return;
     
     const wasCompleted = task.completed;
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    const taskDateStr = task.date && task.date.includes('-') 
+      ? task.date 
+      : new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      
+    setTasks(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const completedDates = new Set(t.completedDates || []);
+      if (!t.completed) {
+        completedDates.add(taskDateStr);
+      } else {
+        completedDates.delete(taskDateStr);
+      }
+      return { ...t, completed: !t.completed, completedDates: Array.from(completedDates) };
+    }));
     
     if (!wasCompleted) {
       const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];

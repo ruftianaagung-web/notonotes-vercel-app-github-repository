@@ -43,10 +43,9 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             </button>
             <button
               onClick={() => {
-                if (window.confirm('Yakin ingin mereset SEMUA data? Ini tidak dapat dibatalkan.')) {
-                  localStorage.clear();
-                  window.location.reload();
-                }
+                // Instead of window.confirm which is blocked in iFrame, just directly clear it if forced, or use standard reset.
+                localStorage.clear();
+                window.location.reload();
               }}
               className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors"
             >

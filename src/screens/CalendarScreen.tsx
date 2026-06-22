@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Activity, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Activity, Flame, Repeat } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -345,6 +345,53 @@ export default function CalendarScreen() {
                     </div>
                   )}
                 </div>
+                
+                {/* Habit Stats */}
+                {tasks.filter(t => t.repeat === 'daily').length > 0 && (
+                  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 md:p-4 mb-6">
+                    <h3 className="text-sm md:text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                       <Repeat className="w-4 h-4" />
+                       {lang === 'id' ? 'Statistik Kebiasaan' : 'Habit Statistics'}
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 snap-x sm:mx-0 sm:px-0">
+                      {tasks.filter(t => t.repeat === 'daily').map(task => {
+                        const createdAt = new Date(task.createdAt || getTaskDateStr(task.date));
+                        const createdStr = new Date(createdAt.getTime() - (createdAt.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                        
+                        const currentDate = new Date(todayDate.getTime() - (todayDate.getTimezoneOffset() * 60000));
+                        const currentStr = currentDate.toISOString().split('T')[0];
+                        
+                        const createdDateObj = new Date(createdStr);
+                        const todayDateObj = new Date(currentStr);
+                        let diffDays = Math.round((todayDateObj.getTime() - createdDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                        if (diffDays < 1) diffDays = 1;
+
+                        const completedCount = task.completedDates ? task.completedDates.length : (task.completed ? 1 : 0);
+                        const missedCount = Math.max(0, diffDays - completedCount);
+                        
+                        return (
+                          <div key={task.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4 min-w-[240px] max-w-[240px] snap-center shrink-0">
+                            <div>
+                               <h4 className="font-bold text-slate-50 line-clamp-1">{task.title}</h4>
+                               <p className="text-[10px] text-slate-500 font-mono mt-1">{lang === 'id' ? 'Aktif sejak:' : 'Active since:'} {createdStr}</p>
+                            </div>
+                            <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 rounded-xl p-2.5">
+                               <div className="flex flex-col items-center flex-1">
+                                 <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-500">{lang === 'id' ? 'Selesai' : 'Done'}</div>
+                                 <div className="text-xl font-black text-emerald-400 mt-0.5">{completedCount}</div>
+                               </div>
+                               <div className="w-[1px] h-8 bg-slate-800"></div>
+                               <div className="flex flex-col items-center flex-1">
+                                 <div className="text-[10px] uppercase tracking-wider font-bold text-orange-500">{lang === 'id' ? 'Bolong' : 'Missed'}</div>
+                                 <div className="text-xl font-black text-orange-400 mt-0.5">{missedCount}</div>
+                               </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 
               </div>
             </div>

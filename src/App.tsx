@@ -13,11 +13,12 @@ import SearchScreen from './screens/SearchScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import FinanceScreen from './screens/FinanceScreen';
+import GameScreen from './screens/GameScreen';
 import { Note } from './types';
 import { useAppStore } from './store';
 import { useTranslation } from './translations';
 
-export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor';
+export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor' | 'game';
 
 let activeAudio: HTMLAudioElement | null = null;
 
@@ -249,7 +250,7 @@ export default function App() {
              </span>
           </div>
 
-          <div className="flex flex-row md:flex-col justify-evenly md:justify-start w-full px-2 sm:px-6 md:px-0 gap-1 md:gap-2 h-full md:h-auto items-center md:items-stretch">
+          <div className="flex flex-row md:flex-col justify-evenly md:justify-start w-full px-1 sm:px-4 md:px-0 gap-1 md:gap-2 h-full md:h-auto items-center md:items-stretch overflow-x-auto no-scrollbar relative z-10">
             <NavItem icon={<Home />} label={t('home')} active={currentScreen === 'home'} onClick={() => setCurrentScreen('home')} />
             <NavItem icon={<CheckCircle2 />} label={t('tasksMenu')} active={currentScreen === 'tasks'} onClick={() => setCurrentScreen('tasks')} />
             <NavItem icon={<Layers />} label={t('searchMenu')} active={currentScreen === 'search'} onClick={() => setCurrentScreen('search')} />
@@ -266,7 +267,8 @@ export default function App() {
         {currentScreen === 'finance' && <FinanceScreen appTheme={appTheme} onBack={() => setCurrentScreen('home')} />}
         {currentScreen === 'note-editor' && activeNote && <NoteEditorScreen note={activeNote} onBack={closeNote} />}
         {currentScreen === 'search' && <SearchScreen onOpenNote={openNote} />}
-        {currentScreen === 'settings' && <SettingsScreen appTheme={appTheme} setAppTheme={setAppTheme} />}
+        {currentScreen === 'settings' && <SettingsScreen appTheme={appTheme} setAppTheme={setAppTheme} onNavigate={(screen) => setCurrentScreen(screen)} />}
+        {currentScreen === 'game' && <GameScreen onBack={() => setCurrentScreen('settings')} />}
       </div>
 
     </div>

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { 
   Moon, Download, Upload, Bell, Lock, FileText, Smartphone, 
-  ChevronRight, User, Globe, Clock, Key, Trash2, Info, Shield, MessageCircle
+  ChevronRight, User, Globe, Clock, Key, Trash2, Info, Shield, MessageCircle, Gamepad2
 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
+import { ScreenItem } from '../App';
 
-export default function SettingsScreen({ appTheme, setAppTheme }: { appTheme: string, setAppTheme: (t: 'dark' | 'light' | 'pink') => void }) {
+export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { appTheme: string, setAppTheme: (t: 'dark' | 'light' | 'pink') => void, onNavigate?: (s: ScreenItem) => void }) {
   const { transactions, notes, tasks, user, updateUser, appPin, setAppPin, setIsUnlocked, importData, clearAllData, lang, setLang, streak, reminderActive, setReminderActive, reminderTime, setReminderTime } = useAppStore();
   const t = useTranslation(lang);
 
@@ -285,6 +286,28 @@ export default function SettingsScreen({ appTheme, setAppTheme }: { appTheme: st
           </div>
         </section>
 
+        {/* HIBURAN */}
+        <section className="mb-6">
+          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Gamepad2 size={14}/> Hiburan</h3>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col">
+            <button 
+              onClick={() => onNavigate && onNavigate('game')}
+              className="flex items-center justify-between p-4 px-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Gamepad2 size={16} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Snake Game</span>
+                  <span className="text-[10px] text-slate-500">Main sebentar buat ngisi waktu (Gabut)</span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
+        </section>
+        
         {/* TENTANG APLIKASI */}
         <section className="pb-8">
           <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Info size={14}/> {t('aboutApp')}</h3>
@@ -296,7 +319,7 @@ export default function SettingsScreen({ appTheme, setAppTheme }: { appTheme: st
                 </div>
                 <span className="font-medium text-sm text-slate-300">{t('appVersion')}</span>
               </div>
-              <span className="font-bold text-sm text-slate-500">v1.2.0</span>
+              <span className="font-bold text-sm text-slate-500">v1.2.1</span>
             </div>
 
             <button onClick={() => setShowUpdateNotes(true)} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors border-b border-slate-800 w-full text-left">
@@ -613,7 +636,7 @@ export default function SettingsScreen({ appTheme, setAppTheme }: { appTheme: st
             <div className="bg-slate-900 border border-slate-800 p-4 md:p-4 rounded-3xl w-full max-w-sm max-h-[80vh] flex flex-col">
               <h3 className="text-xl font-bold text-slate-50 mb-4">{t('aboutAppTitle')}</h3>
               <div className="overflow-y-auto pr-2 flex-1 space-y-4 mb-6 custom-scrollbar text-sm text-slate-300">
-                <p><strong>Noto v1.2.0</strong></p>
+                <p><strong>Noto v1.2.1</strong></p>
                 <p>{t('aboutAppDesc')}</p>
                 <p><strong>{t('aboutAppWhatsNew')}</strong></p>
                 <ul className="list-disc pl-5 space-y-2">

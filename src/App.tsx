@@ -115,7 +115,7 @@ export default function App() {
       };
 
       // 1. Global Daily Reminder
-      if (reminderActive && currentTime === reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
+      if (reminderActive && reminderTime && currentTime >= reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
         localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`);
         const todayTasks = tasks.filter(t => {
             if (t.date === 'Hari ini' || (t.date && t.date.toLowerCase() === 'today') || t.repeat === 'daily') return true;
@@ -148,13 +148,13 @@ export default function App() {
         }
 
         if (isToday) {
-           // Fire if currentTime matches the alarmTime exactly (interval is 10s so we won't miss the minute)
-           if (currentTime === task.alarmTime) {
+           // Fire if currentTime is past the alarmTime (to handle background throttle missing the exact minute)
+           if (currentTime >= task.alarmTime) {
              const alarmKey = `noto_alarm_${task.id}_${todayDate}`;
              if (!localStorage.getItem(alarmKey)) {
                localStorage.setItem(alarmKey, 'true');
-               const message = lang === 'id' ? `Ayo lakukan tugas ${task.title} kamu!` : `Time to do your task: ${task.title}!`;
-               sendNotification(task.title, message, true);
+               const message = lang === 'id' ? `Ayo lakukan tugas "${task.title}" kamu!` : `Time to do your task: "${task.title}"!`;
+               sendNotification(t('alarmDue') || "Waktunya Tugas!", message, true);
              }
            }
         }
@@ -237,7 +237,7 @@ export default function App() {
       )}
 
       {/* Desktop Sidebar / Mobile Bottom Nav */}
-      {currentScreen !== 'note-editor' && (
+      {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'finance' && (
         <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/95 border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-safe md:pb-0 h-[72px] md:h-screen md:pt-8 md:px-4">
           
           {/* Logo only visible on Desktop */}

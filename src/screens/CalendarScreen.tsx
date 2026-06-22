@@ -137,16 +137,30 @@ export default function CalendarScreen() {
      const tDateStr = getTaskDateStr(t.date);
      if (!tDateStr || !tDateStr.includes('-')) return false;
      
+     const createdDateStr = t.createdAt || tDateStr;
+     
      const [y, m, d] = tDateStr.split('-').map(Number);
      const tD = new Date(y, m - 1, d);
+     const [cy, cm, cd] = createdDateStr.split('-').map(Number);
+     const cD = new Date(cy, cm - 1, cd);
 
      if (viewType === 'Harian') {
+       if (t.repeat === 'daily' && selectedDateStr >= createdDateStr && selectedDateStr <= todayStr) return true;
        return tDateStr === selectedDateStr;
      } else if (viewType === 'Mingguan') {
+       if (t.repeat === 'daily') return startOfWeek <= todayDate && endOfWeek >= cD;
        return tD >= startOfWeek && tD <= endOfWeek;
      } else if (viewType === 'Bulanan') {
+       if (t.repeat === 'daily') {
+         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+         return monthStart <= todayDate && new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0) >= cD;
+       }
        return tD.getMonth() === selectedDate.getMonth() && tD.getFullYear() === selectedDate.getFullYear();
      } else if (viewType === 'Tahunan') {
+       if (t.repeat === 'daily') {
+         const yearStart = new Date(selectedDate.getFullYear(), 0, 1);
+         return yearStart <= todayDate && new Date(selectedDate.getFullYear(), 11, 31) >= cD;
+       }
        return tD.getFullYear() === selectedDate.getFullYear();
      }
      return false;
@@ -156,8 +170,28 @@ export default function CalendarScreen() {
     return new Date(2023, i, 1).toLocaleDateString(locale, { month: 'long' });
   });
 
-  const completedCount = selectedTasks.filter(t => t.completed).length;
-  const activeCount = selectedTasks.filter(t => !t.completed).length;
+  let completedCount = 0;
+  let activeCount = 0;
+  
+  if (viewType === 'Harian') {
+    selectedTasks.forEach(t => {
+      if ((t.completedDates || []).includes(selectedDateStr)) {
+        completedCount++;
+      } else {
+        if (selectedDateStr === todayStr) {
+           if (t.completed) completedCount++;
+           else activeCount++;
+        } else {
+           activeCount++;
+        }
+      }
+    });
+  } else {
+    // For weekly, monthly, yearly, we'll just check if it's completed Today or use a simplified logic, but ideally we check current status if active.
+    completedCount = selectedTasks.filter(t => t.completed).length;
+    activeCount = selectedTasks.filter(t => !t.completed).length;
+  }
+  
   // Prevent Recharts visual glitch by removing padding angle if only one data type exists
   const safePaddingAngle = (completedCount > 0 && activeCount > 0) ? 5 : 0;
   

@@ -300,9 +300,9 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
         <div className="w-9" />
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden touch-none bg-slate-50 dark:bg-slate-900" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div className="flex flex-col items-center justify-center p-2 sm:p-4 min-h-full">
-          <div className="w-full max-w-[320px] sm:max-w-[360px] flex flex-col gap-4 sm:gap-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden relative bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col items-center justify-center p-4 min-h-[min-content] sm:min-h-full">
+          <div className="w-full max-w-[320px] sm:max-w-[360px] flex flex-col gap-4 sm:gap-6 pb-6">
             
             {/* Score Header */}
             <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
@@ -320,7 +320,9 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
 
             {/* Game Board */}
             <div 
-              className={`aspect-square w-full rounded-[24px] relative overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50`}
+              className={`aspect-square w-full rounded-[24px] relative overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 touch-none select-none`}
+              onTouchStart={handleTouchStart} 
+              onTouchEnd={handleTouchEnd}
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
@@ -417,17 +419,17 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
                 <div />
                 <button 
                   onClick={() => handleDirection({x: 0, y: -1})} 
-                  className={`bg-white dark:bg-slate-800 h-14 sm:h-[68px] rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
+                  className={`bg-white dark:bg-slate-800 h-12 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
                 >
-                  <ChevronUp size={32} className={`${moodStyle.dpadColor} transition-colors`} />
+                  <ChevronUp size={28} className={`${moodStyle.dpadColor} transition-colors`} />
                 </button>
                 <div />
                 
                 <button 
                   onClick={() => handleDirection({x: -1, y: 0})} 
-                  className={`bg-white dark:bg-slate-800 h-14 sm:h-[68px] rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
+                  className={`bg-white dark:bg-slate-800 h-12 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
                 >
-                  <ChevronLeft size={32} className={`${moodStyle.dpadColor} transition-colors`} />
+                  <ChevronLeft size={28} className={`${moodStyle.dpadColor} transition-colors`} />
                 </button>
                 
                 <div className="flex items-center justify-center">
@@ -438,17 +440,17 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
                 
                 <button 
                   onClick={() => handleDirection({x: 1, y: 0})} 
-                  className={`bg-white dark:bg-slate-800 h-14 sm:h-[68px] rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
+                  className={`bg-white dark:bg-slate-800 h-12 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
                 >
-                  <ChevronRight size={32} className={`${moodStyle.dpadColor} transition-colors`} />
+                  <ChevronRight size={28} className={`${moodStyle.dpadColor} transition-colors`} />
                 </button>
                 
                 <div />
                 <button 
                   onClick={() => handleDirection({x: 0, y: 1})} 
-                  className={`bg-white dark:bg-slate-800 h-14 sm:h-[68px] rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
+                  className={`bg-white dark:bg-slate-800 h-12 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 active:shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 ${moodStyle.text} group`}
                 >
-                  <ChevronDown size={32} className={`${moodStyle.dpadColor} transition-colors`} />
+                  <ChevronDown size={28} className={`${moodStyle.dpadColor} transition-colors`} />
                 </button>
                 <div />
               </div>

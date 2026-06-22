@@ -105,11 +105,11 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   const pinnedTasks = (tasks || []).filter(t => t && t.pinned);
 
   const todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-  const isToday = (d: string) => d === todayStr || d === 'Hari ini' || d === 'Hari Ini';
+  const isToday = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
   
-  const todayTasks = (tasks || []).filter(t => t && t.date && isToday(t.date)).slice(0, 3);
-  const activeTasksCount = (tasks || []).filter(t => t && t.date && isToday(t.date) && !t.completed).length;
-  const totalTodayCount = (tasks || []).filter(t => t && t.date && isToday(t.date)).length;
+  const todayTasks = (tasks || []).filter(t => t && isToday(t)).slice(0, 3);
+  const activeTasksCount = (tasks || []).filter(t => t && isToday(t) && !t.completed).length;
+  const totalTodayCount = (tasks || []).filter(t => t && isToday(t)).length;
   const progressPercent = totalTodayCount === 0 ? 0 : Math.round(((totalTodayCount - activeTasksCount) / totalTodayCount) * 100);
 
   const handleCreateNote = () => {
@@ -125,6 +125,22 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
 
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [hasSeenUpdate121, setHasSeenUpdate121] = useState(() => localStorage.getItem('noto_update_1_2_1') === 'true');
+  const [showDailyAd, setShowDailyAd] = useState(() => {
+    const lastAdDate = localStorage.getItem('noto_last_ad_date');
+    const today = new Date().toDateString();
+    return lastAdDate !== today;
+  });
+
+  const handleCloseAd = () => {
+    localStorage.setItem('noto_last_ad_date', new Date().toDateString());
+    setShowDailyAd(false);
+  };
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
 
   const particleData = React.useMemo(() => {
     return [...Array(15)].map((_, i) => ({
@@ -315,7 +331,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 no-scrollbar pb-6 w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-4 no-scrollbar pb-24 w-full">
         {/* Greeting & Focus Card */}
         <div className="relative w-full rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-4 overflow-hidden shadow-md mb-5 text-white">
           <div className="relative z-10">
@@ -544,6 +560,39 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                 </div>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Daily Ad Modal */}
+      {showDailyAd && (
+        <div className="absolute inset-0 bg-slate-950/95 z-[110] flex flex-col items-center justify-center animate-in fade-in duration-300 p-4" onClick={handleCloseAd}>
+          <div className="bg-slate-900 border border-slate-700/50 rounded-3xl p-6 md:p-8 w-full max-w-md flex flex-col shadow-2xl relative items-center text-center overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Ambient Background Glow */}
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
+            
+            <button 
+              onClick={handleCloseAd}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-50 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20 relative">
+               <span className="text-2xl">✨</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-50 mb-4 font-sans tracking-tight leading-tight">Terimakasih telah menggunakan Noto</h3>
+            <p className="text-[15px] text-slate-300 mb-6 leading-relaxed">
+              Kami berharap dengan adanya Noto membuat hidup anda lebih terstruktur dan kami berharap Noto dapat mempermudah kehidupan anda.
+            </p>
+            <div className="bg-slate-800/60 rounded-2xl p-4 w-full mb-6 border border-slate-700/50">
+               <p className="italic text-indigo-300 font-medium text-[15px]">"Jangan paksakan apapun, Jujur pada dirimu sendiri."</p>
+            </div>
+            <button 
+              onClick={handleCloseAd}
+              className="w-full py-3.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20 active:scale-95"
+            >
+              Lanjutkan
+            </button>
+          </div>
         </div>
       )}
 

@@ -90,9 +90,9 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
 
   let filteredTasks = [...(tasks || [])].filter(t => t !== null && t !== undefined);
   if (activeTab === 'Hari Ini') {
-    filteredTasks = filteredTasks.filter(t => (t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini'));
+    filteredTasks = filteredTasks.filter(t => (t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini' || t.repeat === 'daily'));
   } else if (activeTab === 'Akan Datang') {
-    filteredTasks = filteredTasks.filter(t => !t.completed && t.date && t.date > todayStr && t.date !== 'Hari ini' && t.date !== 'Hari Ini');
+    filteredTasks = filteredTasks.filter(t => !t.completed && t.date && t.date > todayStr && t.date !== 'Hari ini' && t.date !== 'Hari Ini' && t.repeat !== 'daily');
   } else if (activeTab === 'Belum Selesai') {
     filteredTasks = filteredTasks.filter(t => !t.completed);
   } else if (activeTab === 'Selesai') {
@@ -106,12 +106,12 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
     return 0;
   });
 
-  const isTodayTask = (d: string) => d === todayStr || d === 'Hari ini' || d === 'Hari Ini';
-  const isTomorrowTask = (d: string) => d === tomorrowStr || d === 'Besok';
+  const isTodayTask = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
+  const isTomorrowTask = (t: any) => t?.date === tomorrowStr || t?.date === 'Besok';
 
-  const todayTasks = filteredTasks.filter(t => isTodayTask(t?.date || ''));
-  const tomorrowTasks = filteredTasks.filter(t => isTomorrowTask(t?.date || ''));
-  const otherTasks = filteredTasks.filter(t => !isTodayTask(t?.date || '') && !isTomorrowTask(t?.date || ''));
+  const todayTasks = filteredTasks.filter(t => isTodayTask(t));
+  const tomorrowTasks = filteredTasks.filter(t => isTomorrowTask(t));
+  const otherTasks = filteredTasks.filter(t => !isTodayTask(t) && !isTomorrowTask(t));
 
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">

@@ -639,17 +639,17 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                 <p><strong>Noto v1.2.1</strong></p>
                 <p>{t('aboutAppDesc')}</p>
                 <p><strong>{t('aboutAppWhatsNew')}</strong></p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li className="text-emerald-400"><strong>{t('aboutAppFeat1')}</strong> <span className="text-slate-300">{t('aboutAppFeat1Desc')}</span></li>
-                  <li><strong>{t('aboutAppFeat7')}</strong> {t('aboutAppFeat7Desc')}</li>
-                  <li><strong>{t('aboutAppFeat8')}</strong> {t('aboutAppFeat8Desc')}</li>
-                  <li><strong>{t('aboutAppFeat2')}</strong> {t('aboutAppFeat2Desc')}</li>
-                  <li><strong>{t('aboutAppFeat3')}</strong> {t('aboutAppFeat3Desc')}</li>
-                  <li><strong>{t('aboutAppFeat4')}</strong> {t('aboutAppFeat4Desc')}</li>
-                  <li><strong>{t('aboutAppFeat10')}</strong> {t('aboutAppFeat10Desc')}</li>
-                  <li><strong>{t('aboutAppFeat5')}</strong> {t('aboutAppFeat5Desc')}</li>
-                  <li><strong>{t('aboutAppFeat6')}</strong> {t('aboutAppFeat6Desc')}</li>
-                  <li><strong>{t('aboutAppFeat9')}</strong> {t('aboutAppFeat9Desc')}</li>
+                <ul className="space-y-4">
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat1')}</strong> <span>{t('aboutAppFeat1Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat2')}</strong> <span>{t('aboutAppFeat2Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat3')}</strong> <span>{t('aboutAppFeat3Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat4')}</strong> <span>{t('aboutAppFeat4Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat5')}</strong> <span>{t('aboutAppFeat5Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat6')}</strong> <span>{t('aboutAppFeat6Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat7')}</strong> <span>{t('aboutAppFeat7Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat8')}</strong> <span>{t('aboutAppFeat8Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat9')}</strong> <span>{t('aboutAppFeat9Desc')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat10')}</strong> <span>{t('aboutAppFeat10Desc')}</span></li>
                 </ul>
                 
                 <div className="mt-8 pt-4 border-t border-slate-800 text-xs text-slate-500 text-center leading-relaxed">

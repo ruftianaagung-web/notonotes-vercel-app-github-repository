@@ -126,13 +126,28 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [hasSeenUpdate121, setHasSeenUpdate121] = useState(() => localStorage.getItem('noto_update_1_2_1') === 'true');
   const [showDailyAd, setShowDailyAd] = useState(() => {
-    const lastAdDate = localStorage.getItem('noto_last_ad_date');
     const today = new Date().toDateString();
-    return lastAdDate !== today;
+    const lastDate = localStorage.getItem('noto_ad_date');
+    const adCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
+    
+    if (lastDate !== today) {
+      return true;
+    }
+    return adCount < 2;
   });
 
   const handleCloseAd = () => {
-    localStorage.setItem('noto_last_ad_date', new Date().toDateString());
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem('noto_ad_date');
+    let currentCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
+    
+    if (lastDate !== today) {
+       localStorage.setItem('noto_ad_date', today);
+       localStorage.setItem('noto_ad_count', '1');
+    } else {
+       localStorage.setItem('noto_ad_count', (currentCount + 1).toString());
+    }
+    
     setShowDailyAd(false);
   };
 

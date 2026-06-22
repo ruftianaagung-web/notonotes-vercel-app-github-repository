@@ -291,16 +291,16 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
           <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Gamepad2 size={14}/> Hiburan</h3>
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col">
             <button 
-              onClick={() => onNavigate && onNavigate('game')}
+              onClick={() => onNavigate && onNavigate('games-hub')}
               className="flex items-center justify-between p-4 px-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <Gamepad2 size={16} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Snake Game</span>
-                  <span className="text-[10px] text-slate-500">Main sebentar buat ngisi waktu (Gabut)</span>
+                  <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Mini Games</span>
+                  <span className="text-[10px] text-slate-500">Istirahat sejenak (Snake, Tic Tac Toe, dll)</span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400" />

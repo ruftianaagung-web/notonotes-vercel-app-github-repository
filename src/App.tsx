@@ -14,18 +14,25 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import FinanceScreen from './screens/FinanceScreen';
 import GameScreen from './screens/GameScreen';
+import TicTacToeScreen from './screens/TicTacToeScreen';
+import GamesHubScreen from './screens/GamesHubScreen';
 import { Note } from './types';
 import { useAppStore } from './store';
 import { useTranslation } from './translations';
 
-export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor' | 'game';
+export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor' | 'game' | 'tictactoe' | 'games-hub';
 
-let activeAudio: HTMLAudioElement | null = null;
+let activeAudioCtx: AudioContext | null = null;
+let activeInterval: NodeJS.Timeout | null = null;
 
 export const stopGlobalAudio = () => {
-  if (activeAudio) {
-    activeAudio.pause();
-    activeAudio.currentTime = 0;
+  if (activeAudioCtx) {
+    activeAudioCtx.close().catch(() => {});
+    activeAudioCtx = null;
+  }
+  if (activeInterval) {
+    clearInterval(activeInterval);
+    activeInterval = null;
   }
 };
 
@@ -58,64 +65,77 @@ export default function App() {
       
       const sendNotification = (title: string, body: string, isAlarm: boolean = false) => {
         const id = Date.now();
+        const isVisible = document.visibilityState === 'visible';
+        
+        // Selalu tampilkan In-App Alarm agar saat dibuka ada modalnya
         setInAppAlarm({title, body, id, isAlarm});
         if (!isAlarm) {
           setTimeout(() => setInAppAlarm(prev => prev && prev.id === id ? null : prev), 10000);
         }
-        
-        stopGlobalAudio();
-        try {
-          // Play a native sound via HTML Audio for maximum compatibility
-          activeAudio = new Audio('/alarm.mp3');
-          if (isAlarm) {
-            activeAudio.loop = true;
+
+        if (isVisible) {
+          // App terbuka: Bunyikan suara Alarm kencang + Vibrate
+          stopGlobalAudio();
+          
+          if ("vibrate" in navigator) {
+            try { navigator.vibrate(isAlarm ? [500, 500, 500, 500, 500, 500, 500, 500, 500] : [500, 250, 500]); } catch(e) {}
           }
-          activeAudio.play().catch(() => {
-             if ("vibrate" in navigator) navigator.vibrate([500, 250, 500, 250, 500]);
-          });
-        } catch(e) {}
-        
-        try {
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
           
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-          
-          osc.start();
-          osc.stop(ctx.currentTime + 0.5);
-        } catch(e) {}
-        
-        if ('Notification' in window && Notification.permission === 'granted') {
-          const options: any = { 
-            body: body, 
-            icon: '/icon.png', 
-            badge: '/icon.png',
-            vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
-            requireInteraction: isAlarm,
-            silent: false
-          };
-          
-          if (navigator.serviceWorker) {
-            navigator.serviceWorker.ready.then(reg => {
-              reg.showNotification(title, options);
-            }).catch(() => {
+          try {
+             activeAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+             const playBeep = () => {
+               if(!activeAudioCtx) return;
+               const osc = activeAudioCtx.createOscillator();
+               const gain = activeAudioCtx.createGain();
+               osc.connect(gain);
+               gain.connect(activeAudioCtx.destination);
+               osc.type = 'sine';
+               osc.frequency.setValueAtTime(isAlarm ? 900 : 880, activeAudioCtx.currentTime);
+               osc.frequency.exponentialRampToValueAtTime(440, activeAudioCtx.currentTime + 0.1);
+               gain.gain.setValueAtTime(isAlarm ? 0.8 : 0.5, activeAudioCtx.currentTime);
+               gain.gain.exponentialRampToValueAtTime(0.01, activeAudioCtx.currentTime + 0.5);
+               osc.start(activeAudioCtx.currentTime);
+               osc.stop(activeAudioCtx.currentTime + 0.5);
+             };
+             playBeep();
+             if (isAlarm) {
+               activeInterval = setInterval(playBeep, 1000);
+               setTimeout(stopGlobalAudio, 120000); // auto stop after 2 mins
+             }
+          } catch(e) {}
+
+        } else {
+          // App tertutup/minimize: Gunakan Notifikasi System, jangan play sound via audioCtx karena mungkin di-block
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const options: any = { 
+              body: body, 
+              icon: '/icon.png', 
+              badge: '/icon.png',
+              vibrate: isAlarm ? [500, 500, 500, 500, 500, 500, 500, 500, 500] : [500, 250, 500],
+              requireInteraction: isAlarm,
+              silent: false
+            };
+            
+            if (navigator.serviceWorker) {
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, options);
+              }).catch(() => {
+                new Notification(title, options);
+              });
+            } else {
               new Notification(title, options);
-            });
-          } else {
-            new Notification(title, options);
+            }
           }
         }
       };
 
+      const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
       // 1. Global Daily Reminder
-      if (reminderActive && reminderTime && currentTime >= reminderTime && lastNotif !== `${todayDate}_${reminderTime}`) {
+      const [remHour, remMin] = (reminderTime || '00:00').split(':').map(Number);
+      const remTotalMinutes = remHour * 60 + remMin;
+
+      if (reminderActive && reminderTime && currentTotalMinutes >= remTotalMinutes && (currentTotalMinutes - remTotalMinutes) <= 5 && lastNotif !== `${todayDate}_${reminderTime}`) {
         localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`);
         const todayTasks = tasks.filter(t => {
             if (t.date === 'Hari ini' || (t.date && t.date.toLowerCase() === 'today') || t.repeat === 'daily') return true;
@@ -148,8 +168,10 @@ export default function App() {
         }
 
         if (isToday) {
-           // Fire if currentTime is past the alarmTime (to handle background throttle missing the exact minute)
-           if (currentTime >= task.alarmTime) {
+           const [alarmHour, alarmMinute] = task.alarmTime.split(':').map(Number);
+           const alarmTotalMinutes = alarmHour * 60 + alarmMinute;
+
+           if (currentTotalMinutes >= alarmTotalMinutes && (currentTotalMinutes - alarmTotalMinutes) <= 5) {
              const alarmKey = `noto_alarm_${task.id}_${todayDate}`;
              if (!localStorage.getItem(alarmKey)) {
                localStorage.setItem(alarmKey, 'true');
@@ -237,7 +259,7 @@ export default function App() {
       )}
 
       {/* Desktop Sidebar / Mobile Bottom Nav */}
-      {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'finance' && (
+      {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'tictactoe' && currentScreen !== 'games-hub' && currentScreen !== 'finance' && (
         <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/95 border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-safe md:pb-0 h-[72px] md:h-screen md:pt-8 md:px-4">
           
           {/* Logo only visible on Desktop */}
@@ -268,7 +290,9 @@ export default function App() {
         {currentScreen === 'note-editor' && activeNote && <NoteEditorScreen note={activeNote} onBack={closeNote} />}
         {currentScreen === 'search' && <SearchScreen onOpenNote={openNote} />}
         {currentScreen === 'settings' && <SettingsScreen appTheme={appTheme} setAppTheme={setAppTheme} onNavigate={(screen) => setCurrentScreen(screen)} />}
-        {currentScreen === 'game' && <GameScreen onBack={() => setCurrentScreen('settings')} />}
+        {currentScreen === 'games-hub' && <GamesHubScreen onSelectGame={(g) => setCurrentScreen(g)} onBack={() => setCurrentScreen('settings')} />}
+        {currentScreen === 'game' && <GameScreen onBack={() => setCurrentScreen('games-hub')} />}
+        {currentScreen === 'tictactoe' && <TicTacToeScreen onBack={() => setCurrentScreen('games-hub')} />}
       </div>
 
     </div>

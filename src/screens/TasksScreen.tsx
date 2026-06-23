@@ -339,6 +339,23 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
   const { deleteTask, lang } = useAppStore();
   const t = useTranslation(lang);
 
+  let dailyStats = null;
+  if (task.repeat === 'daily' && task.createdAt) {
+    const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const startDate = new Date(task.createdAt);
+    const todayDate = new Date(today);
+    const diffTime = todayDate.getTime() - startDate.getTime();
+    const diffDays = Math.max(1, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
+    
+    const allCompletedDates = new Set(task.completedDates || []);
+    if (task.completed) allCompletedDates.add(today);
+    
+    const completedDays = allCompletedDates.size;
+    const missedDays = Math.max(0, diffDays - completedDays);
+    
+    dailyStats = { completed: completedDays, missed: missedDays };
+  }
+
   return (
     <div className={`flex items-start gap-4 group border-slate-800/60 cursor-pointer px-4 ${!last ? 'border-b py-4' : 'pt-4 pb-4'}`}>
       <button onClick={onToggle} className="p-2 -ml-2 rounded-full flex-none flex items-center justify-center transition-colors mt-0">
@@ -352,7 +369,7 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
       </button>
       <div onClick={onEdit} className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
          <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
-         <div className="flex items-center gap-2 mt-1">
+         <div className="flex items-center gap-2 mt-1 flex-wrap">
            <span className="text-[10px] text-slate-500 font-mono">
              {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
            </span>
@@ -376,6 +393,16 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
              {(isHigh ? t('high') : isMed ? t('medium') : t('low')) || task.priority}
            </span>
          </div>
+         {dailyStats && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                {lang === 'id' ? `Selesai: ${dailyStats.completed} hari` : `Done: ${dailyStats.completed} days`}
+              </span>
+              <span className="text-[10px] font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">
+                {lang === 'id' ? `Bolong: ${dailyStats.missed} hari` : `Missed: ${dailyStats.missed} days`}
+              </span>
+            </div>
+         )}
       </div>
       <button 
         onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} 

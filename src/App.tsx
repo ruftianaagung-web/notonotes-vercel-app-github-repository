@@ -15,12 +15,14 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import FinanceScreen from './screens/FinanceScreen';
 import GameScreen from './screens/GameScreen';
 import TicTacToeScreen from './screens/TicTacToeScreen';
+import PuzzleScreen from './screens/PuzzleScreen';
+import TetrisScreen from './screens/TetrisScreen';
 import GamesHubScreen from './screens/GamesHubScreen';
 import { Note } from './types';
 import { useAppStore } from './store';
 import { useTranslation } from './translations';
 
-export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor' | 'game' | 'tictactoe' | 'games-hub';
+export type ScreenItem = 'home' | 'tasks' | 'search' | 'calendar' | 'finance' | 'settings' | 'note-editor' | 'game' | 'tictactoe' | 'puzzle' | 'tetris' | 'games-hub';
 
 let activeAudioCtx: AudioContext | null = null;
 let activeInterval: NodeJS.Timeout | null = null;
@@ -259,7 +261,7 @@ export default function App() {
       )}
 
       {/* Desktop Sidebar / Mobile Bottom Nav */}
-      {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'tictactoe' && currentScreen !== 'games-hub' && currentScreen !== 'finance' && (
+      {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'tictactoe' && currentScreen !== 'puzzle' && currentScreen !== 'tetris' && currentScreen !== 'games-hub' && currentScreen !== 'finance' && (
         <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/95 border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-safe md:pb-0 h-[72px] md:h-screen md:pt-8 md:px-4">
           
           {/* Logo only visible on Desktop */}
@@ -293,6 +295,8 @@ export default function App() {
         {currentScreen === 'games-hub' && <GamesHubScreen onSelectGame={(g) => setCurrentScreen(g)} onBack={() => setCurrentScreen('settings')} />}
         {currentScreen === 'game' && <GameScreen onBack={() => setCurrentScreen('games-hub')} />}
         {currentScreen === 'tictactoe' && <TicTacToeScreen onBack={() => setCurrentScreen('games-hub')} />}
+        {currentScreen === 'puzzle' && <PuzzleScreen onBack={() => setCurrentScreen('games-hub')} />}
+        {currentScreen === 'tetris' && <TetrisScreen onBack={() => setCurrentScreen('games-hub')} />}
       </div>
 
     </div>

@@ -98,10 +98,10 @@ export default function TicTacToeScreen({ onBack }: { onBack: () => void }) {
 
   const playSound = (type: 'click' | 'win' | 'draw') => {
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
+      const AudioContextDef = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextDef) return;
       if (!audioCtx) {
-        audioCtx = new AudioContext();
+        audioCtx = new AudioContextDef();
       }
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
@@ -118,7 +118,7 @@ export default function TicTacToeScreen({ onBack }: { onBack: () => void }) {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(600, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.1);
@@ -127,7 +127,7 @@ export default function TicTacToeScreen({ onBack }: { onBack: () => void }) {
         osc.frequency.setValueAtTime(400, ctx.currentTime);
         osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
         osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.setValueAtTime(1.5, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.3);
@@ -135,7 +135,7 @@ export default function TicTacToeScreen({ onBack }: { onBack: () => void }) {
         osc.type = 'square';
         osc.frequency.setValueAtTime(300, ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.2);

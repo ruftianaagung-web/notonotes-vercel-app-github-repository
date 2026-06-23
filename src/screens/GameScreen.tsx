@@ -10,7 +10,10 @@ let audioCtx: AudioContext | null = null;
 const getAudioCtx = () => {
   if (!audioCtx) {
     try {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextDef = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextDef) {
+        audioCtx = new AudioContextDef();
+      }
     } catch(e) {
       console.error(e);
     }
@@ -18,8 +21,7 @@ const getAudioCtx = () => {
   return audioCtx;
 };
 
-// Audio setup with Web Audio API for synthetic sounds
-const playSound = (type: 'eat' | 'die') => {
+const playSound = (type: 'eat' | 'die' | 'move') => {
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
@@ -39,15 +41,23 @@ const playSound = (type: 'eat' | 'die') => {
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(400, ctx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.setValueAtTime(1.0, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
       oscillator.start();
       oscillator.stop(ctx.currentTime + 0.1);
+    } else if (type === 'move') {
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+      gainNode.gain.setValueAtTime(0.8, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.05);
     } else {
       oscillator.type = 'sawtooth';
       oscillator.frequency.setValueAtTime(200, ctx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
-      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+      gainNode.gain.setValueAtTime(1.5, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
       oscillator.start();
       oscillator.stop(ctx.currentTime + 0.3);
@@ -189,6 +199,7 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
     
     if (moveQueueRef.current.length < 3) {
       moveQueueRef.current.push(newDir);
+      playSound('move');
     }
   }, [gameOver, isPlaying]);
 

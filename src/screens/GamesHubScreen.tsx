@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Gamepad2, Grid3X3, Joystick } from 'lucide-react';
+import { ArrowLeft, Gamepad2, Grid3X3, Joystick, LayoutGrid } from 'lucide-react';
 import { useAppStore } from '../store';
 
-export default function GamesHubScreen({ onSelectGame, onBack }: { onSelectGame: (game: 'game' | 'tictactoe') => void, onBack: () => void }) {
+export default function GamesHubScreen({ onSelectGame, onBack }: { onSelectGame: (game: 'game' | 'tictactoe' | 'puzzle' | 'tetris') => void, onBack: () => void }) {
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
       <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 transition-colors">
@@ -15,9 +15,22 @@ export default function GamesHubScreen({ onSelectGame, onBack }: { onSelectGame:
         <div className="w-9" />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 content-start space-y-4 max-w-sm mx-auto w-full pt-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex-1 overflow-y-auto p-4 content-start space-y-4 max-w-sm mx-auto w-full pt-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12">
         <p className="text-slate-500 text-sm text-center mb-6">Istirahat sejenak dan mainkan game ringan.</p>
         
+        <button 
+          onClick={() => onSelectGame('tetris')}
+          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex items-center gap-4 hover:shadow-md transition-all active:scale-95"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+            <LayoutGrid size={24} />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Tetris Block</span>
+            <span className="text-xs text-slate-500 mt-0.5">Susun kotak jatuh dari atas dan raih skor</span>
+          </div>
+        </button>
+
         <button 
           onClick={() => onSelectGame('game')}
           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex items-center gap-4 hover:shadow-md transition-all active:scale-95"
@@ -41,6 +54,19 @@ export default function GamesHubScreen({ onSelectGame, onBack }: { onSelectGame:
           <div className="flex flex-col text-left">
             <span className="font-bold text-slate-800 dark:text-slate-200">Tic Tac Toe</span>
             <span className="text-xs text-slate-500 mt-0.5">Classic X dan O, lawan teman atau bot</span>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => onSelectGame('puzzle')}
+          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex items-center gap-4 hover:shadow-md transition-all active:scale-95"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+            <LayoutGrid size={24} />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Sliding Puzzle</span>
+            <span className="text-xs text-slate-500 mt-0.5">Geser kotak dan urutkan angkanya</span>
           </div>
         </button>
       </div>

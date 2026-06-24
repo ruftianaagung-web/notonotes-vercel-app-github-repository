@@ -36,7 +36,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
       key={`note-${note.id}`} 
       onClick={() => onOpenNote(note)}
       role="button"
-      className="w-full text-left flex items-start gap-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer group mb-3"
+      className="w-full text-left flex items-start gap-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer group"
     >
       <div className="flex-1 overflow-hidden">
          <h4 className="font-bold text-slate-50 leading-tight mb-1 truncate">{note.title || 'Untitled Note'}</h4>
@@ -54,13 +54,13 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
       <div className="flex gap-1 flex-shrink-0">
         <button 
           onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}
-          className="p-2 rounded-xl transition-colors hover:bg-slate-800 text-slate-500 hover:text-red-400 opacity-100"
+          className="p-3 flex items-center justify-center rounded-xl transition-colors hover:bg-slate-800 text-slate-500 hover:text-red-400 opacity-100"
         >
           <Trash2 className="w-5 h-5" />
         </button>
         <div 
           onClick={(e) => handleTogglePinNote(e, note)}
-          className="p-2 rounded-xl transition-colors hover:bg-slate-800"
+          className="p-3 flex items-center justify-center rounded-xl transition-colors hover:bg-slate-800"
         >
           <Pin className={`w-5 h-5 ${note.pinned ? 'fill-orange-400 text-orange-400' : 'text-slate-500 hover:text-orange-400'}`} />
         </div>
@@ -72,22 +72,24 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
      const isHigh = task.priority === 'Tinggi';
      const isMed = task.priority === 'Sedang';
      return (
-       <div key={`task-${task.id}`} className={`flex items-start gap-4 group border-slate-800 pb-3 cursor-pointer ${isLast ? '' : 'border-b pt-1 mb-3'}`} onClick={() => toggleTask(task.id)}>
-         <button className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-none transition-colors ${task.completed ? 'border-indigo-500 bg-indigo-500' : 'border-slate-700 group-hover:border-indigo-500'}`}>
-           {task.completed && <div className="w-2 h-2 rounded-sm bg-white" />}
+       <div key={`task-${task.id}`} className={`flex items-start gap-4 group border-slate-800/60 cursor-pointer px-4 ${!isLast ? 'border-b py-4' : 'pt-4 pb-4'}`} onClick={() => toggleTask(task.id)}>
+         <button className="p-4 -ml-4 rounded-full flex-none flex items-center justify-center transition-colors mt-0">
+           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${task.completed ? 'border-indigo-500 bg-indigo-500' : 'border-slate-700 group-hover:border-indigo-500'}`}>
+             {task.completed && <div className="w-2 h-2 rounded-sm bg-white" />}
+           </div>
          </button>
          <div className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
             <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
             <div className="flex flex-wrap items-center gap-2 mt-1">
-              <p className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                <span>{task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}</span>
-                {task.alarmTime && (
-                  <span className="flex items-center gap-0.5 ml-1 text-slate-400 bg-slate-800/50 px-1 py-0.5 rounded font-bold">
-                    <Bell className="w-2.5 h-2.5" />
-                    {task.alarmTime}
-                  </span>
-                )}
-              </p>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {task.date && task.date.includes('-') && task.date !== new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? `${task.date} • ` : ''}{task.time}
+              </span>
+              {task.alarmTime && (
+                <span className="text-[10px] flex gap-1 items-center font-bold text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded">
+                  <Bell className="w-3 h-3" />
+                  {task.alarmTime}
+                </span>
+              )}
               {task.repeat === 'daily' && (
                 <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 text-indigo-400 bg-indigo-500/10 flex items-center gap-1">
                   <Repeat className="w-2.5 h-2.5" />
@@ -95,27 +97,27 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
                 </span>
               )}
               <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 ${
-                isHigh ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20' : 
-                isMed ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20' : 
-                'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                isHigh ? 'text-orange-400 bg-orange-500/10' : 
+                isMed ? 'text-blue-400 bg-blue-500/10' : 
+                'text-emerald-400 bg-emerald-500/10'
               }`}>
-                {(isHigh ? t('high') : isMed ? t('medium') : t('low')) || task.priority} {t('priority')}
+                {(isHigh ? t('high') : isMed ? t('medium') : t('low')) || task.priority}
               </span>
             </div>
          </div>
-         <div className="flex gap-1 flex-shrink-0">
+         <div className="flex gap-1 flex-shrink-0 opacity-100">
            <button 
              onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-             className="p-2 rounded-full transition-colors hover:bg-slate-800 text-slate-500 hover:text-red-400 opacity-100"
+             className="p-3 -mr-2 text-slate-500 hover:text-red-400 transition-colors flex items-center justify-center"
            >
-             <Trash2 className="w-4 h-4" />
+             <Trash2 className="w-5 h-5" />
            </button>
-           <div 
+           <button 
              onClick={(e) => handleTogglePinTask(e, task)}
-             className="p-2 rounded-full transition-colors hover:bg-slate-800"
+             className="p-3 text-slate-500 hover:text-orange-400 transition-colors flex items-center justify-center"
            >
-             <Pin className={`w-4 h-4 ${task.pinned ? 'fill-orange-400 text-orange-400' : 'text-slate-500 hover:text-orange-400'}`} />
-           </div>
+             <Pin className={`w-5 h-5 ${task.pinned ? 'fill-orange-400 text-orange-400' : 'text-slate-500 hover:text-orange-400'}`} />
+           </button>
          </div>
        </div>
      );
@@ -137,7 +139,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><CheckSquare className="w-4 h-4" /> {group.name}</h3>
                  <span className="w-5 h-5 bg-slate-800 text-slate-400 rounded flex items-center justify-center text-[10px] font-bold">{group.items.length}</span>
                </div>
-               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col gap-1">
+               <div className="bg-slate-900 border border-slate-800/80 rounded-3xl flex flex-col overflow-hidden shadow-sm">
                  {group.items.map((task, i) => renderTaskCard(task, i === group.items.length - 1))}
                </div>
              </div>
@@ -168,7 +170,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
                    <Tag className="w-5 h-5 text-indigo-400" /> {group.name}
                  </h3>
                  <div className="space-y-4">
-                   {group.notes.length > 0 && <div className="space-y-1">{group.notes.map(n => renderNoteCard(n))}</div>}
+                   {group.notes.length > 0 && <div className="space-y-3">{group.notes.map(n => renderNoteCard(n))}</div>}
                  </div>
                </div>
              ))}
@@ -181,7 +183,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
          {filteredNotes.length > 0 && (
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><FileText className="w-4 h-4" /> {t('notes')}</h3>
-            <div className="grid grid-cols-1 gap-1">
+            <div className="grid grid-cols-1 gap-3">
               {filteredNotes.map(note => renderNoteCard(note))}
             </div>
           </div>
@@ -189,7 +191,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
          {filteredTasks.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><CheckSquare className="w-4 h-4" /> {t('tasks')}</h3>
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col gap-1">
+            <div className="bg-slate-900 border border-slate-800/80 rounded-3xl flex flex-col overflow-hidden shadow-sm">
                {filteredTasks.map((task, i) => renderTaskCard(task, i === filteredTasks.length - 1))}
             </div>
           </div>
@@ -218,14 +220,14 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
       </div>
       <div className="px-6 py-3 border-b border-slate-800 bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
           <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{t('grouping')}</span>
-          <div className="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-800 shrink-0">
+          <div className="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-800 shrink-0 overflow-x-auto no-scrollbar">
             {['Semua', 'Level Tugas', 'Tag Catatan'].map((g, idx) => {
               const displayLabels = [t('allGroups'), t('taskLevel'), t('noteTag')];
               return (
               <button
                 key={g}
                 onClick={() => setGroupBy(g as any)}
-                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
                   groupBy === g ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
                 }`}
               >

@@ -90,60 +90,61 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
         <span className="font-bold text-2xl text-slate-50 tracking-tight">{t('settingsMenu')}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 w-full">
-        <div className="w-full px-6 py-6 space-y-8">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32 w-full">
+        <div className="w-full px-4 sm:px-6 py-6 space-y-6 max-w-2xl mx-auto">
           
           {/* AKUN & TAMPILAN */}
         <section>
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Smartphone size={14}/> {t('appearance')}</h3>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <User size={16} />
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><Smartphone size={16} className="text-indigo-400" /> {t('appearance')}</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
+              <div className="flex items-center gap-3 w-1/2">
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <User size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('nickname')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('nickname')}</span>
               </div>
               <input 
                 type="text" 
                 value={user.name}
                 onChange={(e) => updateUser({ ...user, name: e.target.value })}
                 placeholder="Masukkan nama"
-                className="bg-transparent text-indigo-400 font-bold text-sm outline-none text-right w-1/2 placeholder-slate-600"
+                className="bg-transparent text-indigo-400 font-bold text-[15px] outline-none text-right w-1/2 placeholder-slate-600 focus:text-indigo-300 transition-colors"
+                maxLength={20}
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-800">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Moon size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <Moon size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{lang === 'id' ? 'Tema Aplikasi' : 'App Theme'}</span>
+                <span className="font-bold text-[15px] text-slate-200">{lang === 'id' ? 'Tema Aplikasi' : 'App Theme'}</span>
               </div>
               <select 
                 value={appTheme}
                 onChange={(e) => setAppTheme(e.target.value as 'dark' | 'light' | 'pink')}
-                className="bg-transparent text-indigo-400 font-bold text-sm outline-none cursor-pointer text-right"
+                className="bg-transparent text-indigo-400 font-bold text-[15px] outline-none cursor-pointer text-right appearance-none focus:text-indigo-300 transition-colors"
               >
-                <option value="dark">{lang === 'id' ? 'Gelap' : 'Dark'}</option>
-                <option value="light">{lang === 'id' ? 'Terang' : 'Light'}</option>
-                <option value="pink">{lang === 'id' ? 'Ecy' : 'Ecy'}</option>
+                <option value="dark" className="bg-slate-900">{lang === 'id' ? 'Gelap' : 'Dark'}</option>
+                <option value="light" className="bg-slate-900">{lang === 'id' ? 'Terang' : 'Light'}</option>
+                <option value="pink" className="bg-slate-900">{lang === 'id' ? 'Ecy' : 'Ecy'}</option>
               </select>
             </div>
 
-            <div className="flex items-center justify-between p-4 px-5">
+            <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Globe size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <Globe size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('lang')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('lang')}</span>
               </div>
               <select 
                 value={lang} onChange={(e) => setLang(e.target.value as 'id' | 'en')}
-                className="bg-transparent text-indigo-400 font-bold text-sm outline-none cursor-pointer text-right"
+                className="bg-transparent text-indigo-400 font-bold text-[15px] outline-none cursor-pointer text-right appearance-none focus:text-indigo-300 transition-colors"
               >
-                <option value="id">Indonesia</option>
-                <option value="en">English</option>
+                <option value="id" className="bg-slate-900">Indonesia</option>
+                <option value="en" className="bg-slate-900">English</option>
               </select>
             </div>
           </div>
@@ -151,18 +152,18 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
 
         {/* NOTIFIKASI & HABIT */}
         <section>
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Bell size={14}/> {t('notifications')}</h3>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-800">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><Bell size={16} className="text-orange-400" /> {t('notifications')}</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full ${reminderActive ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center`}>
-                  <Bell size={16} />
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner transition-colors ${reminderActive ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-slate-800/80 text-slate-400'}`}>
+                  <Bell size={18} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-sm text-slate-300">
+                  <span className="font-bold text-[15px] text-slate-200">
                     {t('appReminder')}
                   </span>
-                  <span className="text-xs text-slate-500 mt-0.5">{reminderActive ? t('activeLabel') : t('inactiveLabel')}</span>
+                  <span className="text-xs font-medium text-slate-500 mt-0.5">{reminderActive ? t('activeLabel') : t('inactiveLabel')}</span>
                 </div>
               </div>
               <button 
@@ -172,25 +173,25 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                     Notification.requestPermission().catch(() => {});
                   }
                 }} 
-                className={`w-12 h-7 rounded-full flex items-center p-1 transition-colors ${reminderActive ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                className={`w-14 h-8 rounded-full flex items-center p-1 transition-colors shadow-inner ${reminderActive ? 'bg-orange-500' : 'bg-slate-700/50 border border-slate-600/30'}`}
               >
-                <div className={`w-5 h-5 rounded-full bg-white transition-transform ${reminderActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform shadow-sm ${reminderActive ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
             </div>
 
-            <div className={`flex items-center justify-between p-4 px-5 transition-opacity ${!reminderActive ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className={`flex items-center justify-between p-4 transition-all duration-300 ${!reminderActive ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Clock size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <Clock size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('reminderTime')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('reminderTime')}</span>
               </div>
               <input 
                 type="time" 
                 value={reminderTime}
                 onChange={(e) => setReminderTime(e.target.value)}
                 disabled={!reminderActive}
-                className="bg-slate-800 text-indigo-400 font-bold px-3 py-1.5 rounded-lg text-sm border-none outline-none appearance-none"
+                className="bg-slate-900/50 border border-slate-700/50 text-orange-400 font-bold px-4 py-2 rounded-xl text-[15px] outline-none appearance-none hover:bg-slate-800 transition-colors cursor-pointer"
               />
             </div>
           </div>
@@ -198,39 +199,48 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
 
         {/* DATA & CADANGAN */}
         <section>
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><FileText size={14}/> {t('dataBackup')}</h3>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
-            <button onClick={handleExport} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors border-b border-slate-800">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><FileText size={16} className="text-emerald-400" /> {t('dataBackup')}</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
+            <button onClick={handleExport} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 text-left">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Download size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shadow-inner border border-emerald-500/20">
+                  <Download size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('backupExport')}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-[15px] text-slate-200">{t('backupExport')}</span>
+                  <span className="text-[11px] font-medium text-slate-500 mt-0.5">Simpan data ke perangkat</span>
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+              <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
-            <button onClick={handleImport} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors">
+            <button onClick={handleImport} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors text-left">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Upload size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center shadow-inner border border-sky-500/20">
+                  <Upload size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('restoreImport')}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-[15px] text-slate-200">{t('restoreImport')}</span>
+                  <span className="text-[11px] font-medium text-slate-500 mt-0.5">Pulihkan data dari perangkat</span>
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+              <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
           </div>
         </section>
 
         {/* PRIVASI & KEAMANAN */}
         <section>
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Lock size={14}/> {t('securityAdvanced')}</h3>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-800">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><Lock size={16} className="text-rose-400" /> {t('securityAdvanced')}</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full ${appPin ? 'bg-green-500/10 text-green-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center`}>
-                  <Lock size={16} />
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner transition-all ${appPin ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-slate-800/80 text-slate-400'}`}>
+                  <Lock size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('pinLock')}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-[15px] text-slate-200">{t('pinLock')}</span>
+                  <span className="text-[11px] font-medium text-slate-500 mt-0.5">Kunci akses aplikasi</span>
+                </div>
               </div>
               <button 
                 onClick={() => {
@@ -244,9 +254,9 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                     setPinModalMode('create');
                   }
                 }}
-                className={`w-12 h-7 rounded-full flex items-center p-1 transition-colors ${appPin ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                className={`w-14 h-8 rounded-full flex items-center p-1 transition-colors shadow-inner ${appPin ? 'bg-rose-500' : 'bg-slate-700/50 border border-slate-600/30'}`}
               >
-                <div className={`w-5 h-5 rounded-full bg-white transition-transform ${appPin ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform shadow-sm ${appPin ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
             </div>
 
@@ -257,29 +267,29 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                   setPinError(false);
                   setPinModalMode('verify');
                 }}
-                className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors border-b border-slate-800 text-left"
+                className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                    <Key size={16} />
+                  <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                    <Key size={18} />
                   </div>
-                  <span className="font-medium text-sm text-slate-300">{t('changePin')}</span>
+                  <span className="font-bold text-[15px] text-slate-200">{t('changePin')}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-600" />
+                <ChevronRight className="w-5 h-5 text-slate-600" />
               </button>
             )}
 
             <button 
               onClick={() => setShowResetConfirm(true)}
-              className="flex items-center justify-between p-4 px-5 hover:bg-red-500/5 transition-colors text-left group"
+              className="flex items-center justify-between p-4 hover:bg-red-500/10 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition-colors">
-                  <Trash2 size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors shadow-inner border border-red-500/20">
+                  <Trash2 size={18} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm text-red-500">{t('reset')}</span>
-                  <span className="text-xs text-slate-500 mt-0.5">{t('resetConfirm')}</span>
+                  <span className="font-bold text-[15px] text-red-500">{t('reset')}</span>
+                  <span className="text-[11px] font-medium text-slate-500 mt-0.5">{t('resetConfirm')}</span>
                 </div>
               </div>
             </button>
@@ -287,88 +297,88 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
         </section>
 
         {/* HIBURAN */}
-        <section className="mb-6">
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Gamepad2 size={14}/> Hiburan</h3>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col">
+        <section>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><Gamepad2 size={16} className="text-purple-400" /> Hiburan</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
             <button 
               onClick={() => onNavigate && onNavigate('games-hub')}
-              className="flex items-center justify-between p-4 px-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left"
+              className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors w-full text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                  <Gamepad2 size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 shadow-inner border border-purple-500/20">
+                  <Gamepad2 size={18} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Mini Games</span>
-                  <span className="text-[10px] text-slate-500">Istirahat sejenak (Snake, Tic Tac Toe, dll)</span>
+                  <span className="font-bold text-[15px] text-slate-200">Mini Games</span>
+                  <span className="text-[11px] font-medium text-slate-500 mt-0.5">Istirahat sejenak (Snake, Tic Tac Toe, dll)</span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
           </div>
         </section>
         
         {/* TENTANG APLIKASI */}
-        <section className="pb-8">
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-3 flex items-center gap-2"><Info size={14}/> {t('aboutApp')}</h3>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-800">
+        <section className="pb-4">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><Info size={16} className="text-sky-400" /> {t('aboutApp')}</h3>
+          <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Smartphone size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <Smartphone size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('appVersion')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('appVersion')}</span>
               </div>
-              <span className="font-bold text-sm text-slate-500">v1.2.1</span>
+              <span className="font-black text-[15px] text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full text-center">v2.0</span>
             </div>
 
-            <button onClick={() => setShowUpdateNotes(true)} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors border-b border-slate-800 w-full text-left">
+            <button onClick={() => setShowUpdateNotes(true)} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 w-full text-left">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <FileText size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <FileText size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('updateNotes')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('updateNotes')}</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+              <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
 
-            <button onClick={() => setShowPrivacyPolicy(true)} className="flex items-center justify-between p-4 px-5 hover:bg-slate-800/50 transition-colors border-b border-slate-800 w-full text-left">
+            <button onClick={() => setShowPrivacyPolicy(true)} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 w-full text-left">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
-                  <Shield size={16} />
+                <div className="w-10 h-10 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 shadow-inner">
+                  <Shield size={18} />
                 </div>
-                <span className="font-medium text-sm text-slate-300">{t('privacyPolicy')}</span>
+                <span className="font-bold text-[15px] text-slate-200">{t('privacyPolicy')}</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+              <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
 
-            <div className="flex flex-col p-4 px-5 border-b border-slate-800 bg-slate-900/50">
-              <p className="text-xs text-slate-400 leading-relaxed mb-3">
+            <div className="flex flex-col p-4 bg-slate-900/30">
+              <p className="text-xs text-slate-400 font-medium leading-relaxed mb-4 text-center">
                 {lang === 'id' 
                   ? 'Saran dan kritik Anda sangat berarti bagi kami. Silakan hubungi Instagram Noto.' 
                   : 'Your suggestions and feedback are very meaningful to us. Please contact Noto on Instagram.'}
               </p>
               <button 
                 onClick={() => window.open('https://instagram.com/noto.grow', '_blank')} 
-                className="flex items-center justify-center gap-2 p-3 bg-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-500/20 transition-colors w-full border border-indigo-500/20"
+                className="flex items-center justify-center gap-2 p-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl hover:bg-indigo-500 hover:text-white transition-all w-full border border-indigo-500/20 font-bold text-[15px] shadow-sm active:scale-95"
               >
-                <MessageCircle size={16} />
-                <span className="font-semibold text-sm">@noto.grow</span>
+                <MessageCircle size={18} />
+                <span>@noto.grow</span>
               </button>
             </div>
           </div>
           
-          <div className="mt-6 mb-2 mx-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-            <p className="text-xs text-slate-400 text-center leading-relaxed">
+          <div className="mt-8 mb-4 mx-2 p-5 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-sm hidden">
+            <p className="text-xs text-slate-400 font-medium text-center leading-relaxed">
               {lang === 'id'
                 ? 'Noto saat ini masih dalam tahap pengembangan dan belum ada versi Aplikasi.'
                 : 'Noto is currently still in development and does not have an App version yet.'}
             </p>
           </div>
 
-          <div className="mt-10 text-center">
-            <p className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600">NOTO</p>
-            <p className="text-[10px] text-slate-700 mt-1">{t('madeWithSimplicity')}</p>
+          <div className="mt-12 text-center pb-8 opacity-60 hover:opacity-100 transition-opacity">
+            <p className="text-sm font-black tracking-[0.3em] uppercase text-slate-500">NOTO</p>
+            <p className="text-[11px] font-medium text-slate-600 mt-2">{t('madeWithSimplicity')}</p>
           </div>
         </section>
 
@@ -636,10 +646,12 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
             <div className="bg-slate-900 border border-slate-800 p-4 md:p-4 rounded-3xl w-full max-w-sm max-h-[80vh] flex flex-col">
               <h3 className="text-xl font-bold text-slate-50 mb-4">{t('aboutAppTitle')}</h3>
               <div className="overflow-y-auto pr-2 flex-1 space-y-4 mb-6 custom-scrollbar text-sm text-slate-300">
-                <p><strong>Noto v1.2.1</strong></p>
+                <p><strong>Noto v2.0</strong></p>
                 <p>{t('aboutAppDesc')}</p>
                 <p><strong>{t('aboutAppWhatsNew')}</strong></p>
                 <ul className="space-y-4">
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('appUpdateTitle')}</strong> <span className="text-emerald-200">{t('appUpdateBody')}</span></li>
+                  <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat11')}</strong> <span>{t('aboutAppFeat11Desc')}</span></li>
                   <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat1')}</strong> <span>{t('aboutAppFeat1Desc')}</span></li>
                   <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat2')}</strong> <span>{t('aboutAppFeat2Desc')}</span></li>
                   <li className="flex flex-col"><strong className="text-emerald-400 text-sm mb-0.5">{t('aboutAppFeat3')}</strong> <span>{t('aboutAppFeat3Desc')}</span></li>

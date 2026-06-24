@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, ClipboardList, Repeat, Bell, X } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Plus, Trash2, ClipboardList, Repeat, Bell, X, Target, Image as ImageIcon, Calendar, CheckSquare, Pencil, Camera, ChevronRight, Flame, Gift, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Task } from '../types';
 
 export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => void }) {
-  const [activeTab, setActiveTab] = useState<'Hari Ini' | 'Akan Datang' | 'Belum Selesai' | 'Selesai'>('Hari Ini');
+  const [activeTab, setActiveTab] = useState<'Disiplin' | 'Hari Ini' | 'Akan Datang' | 'Belum Selesai' | 'Selesai'>('Hari Ini');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -13,17 +13,20 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
   const [newTaskRepeat, setNewTaskRepeat] = useState<'once' | 'daily'>('once');
   const [newTaskDate, setNewTaskDate] = useState<string>(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
   const [newTaskAlarm, setNewTaskAlarm] = useState<string>('');
+  const [newTaskIsDiscipline, setNewTaskIsDiscipline] = useState<boolean>(false);
   const { tasks, addTask, updateTask, toggleTask, lang } = useAppStore();
   const t = useTranslation(lang);
 
-  const openEditTask = (task: Task) => {
+  const openEditTask = useCallback((task: Task) => {
     setEditingTask(task);
     setNewTaskTitle(task.title);
     setNewTaskPriority(task.priority);
     setNewTaskRepeat(task.repeat || 'once');
     setNewTaskDate(task.date || new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
     setNewTaskAlarm(task.alarmTime || '');
-  };
+    setNewTaskIsDiscipline(!!task.isDiscipline);
+    setIsAddingTask(true);
+  }, []);
 
   const handleAddTaskSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -42,6 +45,15 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
        // Prevent immediate notification if user schedules an alarm in the past
        const isTodayTask = newTaskDate === 'Hari ini' || newTaskDate.toLowerCase() === 'today' || newTaskDate === todayDate || newTaskRepeat === 'daily';
 
+       if (newTaskIsDiscipline) {
+         // remove discipline flag from all other tasks
+         tasks.forEach(t => {
+           if (t.isDiscipline && t.id !== editingTask?.id) {
+             updateTask({ ...t, isDiscipline: false });
+           }
+         });
+       }
+
        if (editingTask) {
          updateTask({
            ...editingTask,
@@ -49,7 +61,9 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            priority: newTaskPriority,
            repeat: newTaskRepeat,
            date: newTaskDate,
-           alarmTime: newTaskAlarm || undefined
+           alarmTime: newTaskAlarm || undefined,
+           isDiscipline: newTaskIsDiscipline,
+           disciplineData: newTaskIsDiscipline ? (editingTask.disciplineData || {}) : undefined
          });
          if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
            localStorage.setItem(`noto_alarm_${editingTask.id}_${todayDate}`, 'true');
@@ -66,7 +80,9 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            createdAt: todayDate,
            time: new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
            repeat: newTaskRepeat,
-           alarmTime: newTaskAlarm || undefined
+           alarmTime: newTaskAlarm || undefined,
+           isDiscipline: newTaskIsDiscipline,
+           disciplineData: newTaskIsDiscipline ? {} : undefined
          });
          if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
            localStorage.setItem(`noto_alarm_${newId}_${todayDate}`, 'true');
@@ -78,135 +94,177 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
     setNewTaskRepeat('once');
     setNewTaskDate(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
     setNewTaskAlarm('');
+    setNewTaskIsDiscipline(false);
     setIsAddingTask(false);
     setEditingTask(null);
   };
 
-  const todayDate = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
-  const todayStr = todayDate.toISOString().split('T')[0];
-  const tmr = new Date(todayDate);
-  tmr.setDate(tmr.getDate() + 1);
-  const tomorrowStr = tmr.toISOString().split('T')[0];
+  const { todayTasks, tomorrowTasks, otherTasks, disciplineTask, filteredTasks } = useMemo(() => {
+    const todayDate = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
+    const todayStr = todayDate.toISOString().split('T')[0];
+    const tmr = new Date(todayDate);
+    tmr.setDate(tmr.getDate() + 1);
+    const tomorrowStr = tmr.toISOString().split('T')[0];
 
-  let filteredTasks = [...(tasks || [])].filter(t => t !== null && t !== undefined);
-  if (activeTab === 'Hari Ini') {
-    filteredTasks = filteredTasks.filter(t => (t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini' || t.repeat === 'daily'));
-  } else if (activeTab === 'Akan Datang') {
-    filteredTasks = filteredTasks.filter(t => !t.completed && t.date && t.date > todayStr && t.date !== 'Hari ini' && t.date !== 'Hari Ini' && t.repeat !== 'daily');
-  } else if (activeTab === 'Belum Selesai') {
-    filteredTasks = filteredTasks.filter(t => !t.completed);
-  } else if (activeTab === 'Selesai') {
-    filteredTasks = filteredTasks.filter(t => t.completed);
-  }
-
-  filteredTasks.sort((a, b) => {
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1;
+    let filtered = [...(tasks || [])].filter(t => t !== null && t !== undefined);
+    if (activeTab === 'Hari Ini') {
+      filtered = filtered.filter(t => (t.date === todayStr || t.date === 'Hari ini' || t.date === 'Hari Ini' || t.repeat === 'daily'));
+    } else if (activeTab === 'Akan Datang') {
+      filtered = filtered.filter(t => !t.completed && t.date && t.date > todayStr && t.date !== 'Hari ini' && t.date !== 'Hari Ini' && t.repeat !== 'daily');
+    } else if (activeTab === 'Belum Selesai') {
+      filtered = filtered.filter(t => !t.completed);
+    } else if (activeTab === 'Selesai') {
+      filtered = filtered.filter(t => t.completed);
+    } else if (activeTab === 'Disiplin') {
+      filtered = [];
     }
-    return 0;
-  });
 
-  const isTodayTask = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
-  const isTomorrowTask = (t: any) => t?.date === tomorrowStr || t?.date === 'Besok';
+    filtered.sort((a, b) => {
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      return 0;
+    });
 
-  const todayTasks = filteredTasks.filter(t => isTodayTask(t));
-  const tomorrowTasks = filteredTasks.filter(t => isTomorrowTask(t));
-  const otherTasks = filteredTasks.filter(t => !isTodayTask(t) && !isTomorrowTask(t));
+    const isTodayTask = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
+    const isTomorrowTask = (t: any) => t?.date === tomorrowStr || t?.date === 'Besok';
+
+    const todayTasks = filtered.filter(t => isTodayTask(t));
+    const tomorrowTasks = filtered.filter(t => isTomorrowTask(t));
+    const otherTasks = filtered.filter(t => !isTodayTask(t) && !isTomorrowTask(t));
+
+    const disciplineTask = tasks.find(t => t.isDiscipline && !t.isArchived);
+
+    return { todayTasks, tomorrowTasks, otherTasks, disciplineTask, filteredTasks: filtered };
+  }, [tasks, activeTab]);
+
+  const handleSelectExisting = useCallback(() => { setActiveTab('Hari Ini'); setIsAddingTask(true); }, []);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">
       {/* Top Bar */}
-      <div className="flex-none h-16 border-b border-slate-800 bg-slate-900 px-6 flex items-center justify-between">
+      <div className="flex-none pt-6 pb-2 px-6 flex items-center justify-between border-b border-slate-800/50 bg-slate-900/50">
         <div className="flex items-center gap-4">
           <span className="font-bold text-2xl text-slate-50 tracking-tight">{t('tasksMenu')}</span>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-5 py-3 flex gap-2 overflow-x-auto no-scrollbar border-b border-slate-800/80 flex-shrink-0 lg:justify-center">
-        {['Hari Ini', 'Akan Datang', 'Belum Selesai', 'Selesai'].map((tab, idx) => {
-          const tabLabels = [
-             lang === 'id' ? 'Hari Ini' : "Today", 
-             lang === 'id' ? 'Berikutnya' : "Upcoming", 
-             lang === 'id' ? 'Belum Selesai' : "Uncompleted", 
-             lang === 'id' ? 'Selesai' : "Done"
-          ];
-          return (
+      {/* Mode Selector */}
+      <div className="px-5 py-4">
+        <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 relative">
+          <div 
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-transform duration-300 ease-out ${activeTab === 'Disiplin' ? 'bg-gradient-to-r from-orange-500 to-rose-500 shadow-lg shadow-orange-500/20 translate-x-[calc(100%+4px)]' : 'bg-indigo-600 shadow-lg shadow-indigo-600/20 translate-x-0'}`} 
+          />
           <button 
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2 rounded-xl text-[11px] md:text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors flex-shrink-0 ${
-              activeTab === tab 
-                ? 'bg-slate-800 text-slate-50' 
-                : 'text-slate-500 hover:bg-slate-900'
-            }`}
+            onClick={() => setActiveTab('Hari Ini')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors z-10 ${activeTab !== 'Disiplin' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
-            {tabLabels[idx]}
+            <ClipboardList className="w-4 h-4" />
+            {lang === 'id' ? 'Tugas Biasa' : 'Normal Tasks'}
           </button>
-        )})}
+          <button 
+            onClick={() => setActiveTab('Disiplin')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors z-10 ${activeTab === 'Disiplin' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            <Target className="w-4 h-4" />
+            {lang === 'id' ? 'Fokus Disiplin' : 'Discipline Focus'}
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 w-full">
+      {/* Sub Tabs for Normal Tasks */}
+      {activeTab !== 'Disiplin' && (
+        <div className="px-5 pb-4 flex gap-2 overflow-x-auto no-scrollbar border-b border-slate-800/50 flex-shrink-0 lg:justify-center">
+          {['Hari Ini', 'Akan Datang', 'Belum Selesai', 'Selesai'].map((tab, idx) => {
+            const tabLabels = [
+               lang === 'id' ? 'Hari Ini' : "Today", 
+               lang === 'id' ? 'Berikutnya' : "Upcoming", 
+               lang === 'id' ? 'Belum Selesai' : "Uncompleted", 
+               lang === 'id' ? 'Selesai' : "Done"
+            ];
+            return (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`px-5 py-2.5 rounded-full text-[11px] md:text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all flex-shrink-0 ${
+                activeTab === tab 
+                  ? 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/30 shadow-inner' 
+                  : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
+              }`}
+            >
+              {tabLabels[idx]}
+            </button>
+          )})}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32 w-full">
         <div className="w-full px-4 md:px-6 py-6 space-y-6">
           
-          {filteredTasks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-slate-500">
-              <ClipboardList className="w-12 h-12 mb-4 text-slate-800" />
-              <div className="text-center font-medium text-sm md:text-base">
-                {activeTab === 'Selesai' 
-                  ? (lang === 'id' ? 'Belum ada tugas yang selesai.' : 'No completed tasks yet.') 
-                  : activeTab === 'Hari Ini' 
-                    ? t('noTasks') 
-                    : (lang === 'id' ? 'Belum ada tugas.' : 'No tasks.')}
+          {activeTab === 'Disiplin' ? (
+            <DisciplineView task={disciplineTask} onSelectExisting={handleSelectExisting} lang={lang} />
+          ) : (
+            <>
+              {filteredTasks.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 text-slate-500">
+                  <ClipboardList className="w-12 h-12 mb-4 text-slate-800" />
+                  <div className="text-center font-medium text-sm md:text-base">
+                    {activeTab === 'Selesai' 
+                      ? (lang === 'id' ? 'Belum ada tugas yang selesai.' : 'No completed tasks yet.') 
+                      : activeTab === 'Hari Ini' 
+                        ? t('noTasks') 
+                        : (lang === 'id' ? 'Belum ada tugas.' : 'No tasks.')}
+                  </div>
+                </div>
+              )}
+
+              {/* Group: Hari Ini */}
+              {todayTasks.length > 0 && (
+              <div>
+                {activeTab !== 'Hari Ini' && (
+                  <div className="flex items-center gap-3 mb-3 ml-2">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('today')}</h3>
+                    <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{todayTasks.length}</span>
+                  </div>
+                )}
+                <div className="bg-slate-900 border border-slate-800/80 rounded-3xl flex flex-col overflow-hidden shadow-sm">
+                   {todayTasks.map((task, i) => (
+                     <TaskCard key={task.id} task={task} last={i === todayTasks.length - 1} onToggle={toggleTask} onEdit={openEditTask} />
+                   ))}
+                </div>
               </div>
-            </div>
-          )}
+              )}
 
-          {/* Group: Hari Ini */}
-          {todayTasks.length > 0 && (
-          <div>
-            {activeTab !== 'Hari Ini' && (
-              <div className="flex items-center gap-3 mb-3 ml-2">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('today')}</h3>
-                <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{todayTasks.length}</span>
+              {/* Group: Besok */}
+              {tomorrowTasks.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-3 ml-2">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('tomorrow')}</h3>
+                  <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{tomorrowTasks.length}</span>
+                </div>
+                <div className="bg-slate-900 border border-slate-800/80 rounded-3xl flex flex-col overflow-hidden shadow-sm">
+                   {tomorrowTasks.map((task, i) => (
+                     <TaskCard key={task.id} task={task} last={i === tomorrowTasks.length - 1} onToggle={toggleTask} onEdit={openEditTask} />
+                   ))}
+                </div>
               </div>
-            )}
-            <div className="bg-slate-900 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden">
-               {todayTasks.map((task, i) => (
-                 <TaskCard key={task.id} task={task} last={i === todayTasks.length - 1} onToggle={() => toggleTask(task.id)} onEdit={() => { openEditTask(task); setIsAddingTask(true); }} />
-               ))}
-            </div>
-          </div>
-          )}
+              )}
 
-          {/* Group: Besok */}
-          {tomorrowTasks.length > 0 && (
-          <div>
-            <div className="flex items-center gap-3 mb-3 ml-2">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('tomorrow')}</h3>
-              <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{tomorrowTasks.length}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden">
-               {tomorrowTasks.map((task, i) => (
-                 <TaskCard key={task.id} task={task} last={i === tomorrowTasks.length - 1} onToggle={() => toggleTask(task.id)} onEdit={() => { openEditTask(task); setIsAddingTask(true); }} />
-               ))}
-            </div>
-          </div>
-          )}
-
-          {/* Group: Lainnya */}
-          {otherTasks.length > 0 && (
-          <div>
-            <div className="flex items-center gap-3 mb-3 ml-2">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('other')}</h3>
-              <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{otherTasks.length}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden">
-               {otherTasks.map((task, i) => (
-                 <TaskCard key={task.id} task={task} last={i === otherTasks.length - 1} onToggle={() => toggleTask(task.id)} onEdit={() => { openEditTask(task); setIsAddingTask(true); }} />
-               ))}
-            </div>
-          </div>
+              {/* Group: Lainnya */}
+              {otherTasks.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-3 ml-2">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('other')}</h3>
+                  <span className="text-[10px] text-slate-500 font-medium bg-slate-800/50 px-2 py-0.5 rounded-md">{otherTasks.length}</span>
+                </div>
+                <div className="bg-slate-900 border border-slate-800/80 rounded-3xl flex flex-col overflow-hidden shadow-sm">
+                   {otherTasks.map((task, i) => (
+                     <TaskCard key={task.id} task={task} last={i === otherTasks.length - 1} onToggle={toggleTask} onEdit={openEditTask} />
+                   ))}
+                </div>
+              </div>
+              )}
+            </>
           )}
 
         </div>
@@ -214,8 +272,8 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
 
       {/* FAB Add */}
       {!isAddingTask && (
-        <button onClick={() => setIsAddingTask(true)} className="absolute bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 transition-transform active:scale-95 z-50">
-          <Plus className="w-6 h-6 stroke-[2]" />
+        <button onClick={() => setIsAddingTask(true)} className="absolute bottom-8 right-6 w-16 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-indigo-600/30 transition-transform active:scale-95 z-50">
+          <Plus className="w-7 h-7 stroke-[2.5]" />
         </button>
       )}
 
@@ -321,6 +379,21 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                        </button>
                      </div>
                    </div>
+
+                   {/* Discipline Toggle */}
+                   <div className="flex items-center justify-between p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-xl mt-4">
+                     <div className="flex flex-col">
+                       <span className="text-sm font-bold text-indigo-400">{lang === 'id' ? '🔥 Fokus Disiplin' : '🔥 Discipline Focus'}</span>
+                       <span className="text-[10px] text-slate-500">{lang === 'id' ? 'Jadikan sebagai target utama (hanya bisa 1 tugas)' : 'Make this main target (only 1 task allowed)'}</span>
+                     </div>
+                     <button
+                        type="button"
+                        onClick={() => setNewTaskIsDiscipline(!newTaskIsDiscipline)}
+                        className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors ${newTaskIsDiscipline ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                     >
+                       <div className={`w-4 h-4 rounded-full bg-white transition-transform ${newTaskIsDiscipline ? 'translate-x-6' : 'translate-x-0'}`} />
+                     </button>
+                   </div>
                  </div>
 
                  <button type="submit" className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">{t('save')}</button>
@@ -333,7 +406,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
   );
 }
 
-const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onEdit: () => void }> = ({ task, last, onToggle, onEdit }) => {
+const TaskCard = React.memo<{ task: Task, last?: boolean, onToggle: (id: string) => void, onEdit: (task: Task) => void }>(({ task, last, onToggle, onEdit }) => {
   const isHigh = task.priority === 'Tinggi';
   const isMed = task.priority === 'Sedang';
   const { deleteTask, lang } = useAppStore();
@@ -358,7 +431,7 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
 
   return (
     <div className={`flex items-start gap-4 group border-slate-800/60 cursor-pointer px-4 ${!last ? 'border-b py-4' : 'pt-4 pb-4'}`}>
-      <button onClick={onToggle} className="p-2 -ml-2 rounded-full flex-none flex items-center justify-center transition-colors mt-0">
+      <button onClick={() => onToggle(task.id)} className="p-4 -ml-4 rounded-full flex-none flex items-center justify-center transition-colors mt-0">
         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
           task.completed 
             ? 'border-indigo-500 bg-indigo-500' 
@@ -367,7 +440,7 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
           {task.completed && <div className="w-2 h-2 rounded-sm bg-white" />}
         </div>
       </button>
-      <div onClick={onEdit} className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
+      <div onClick={() => onEdit(task)} className={`flex-1 ${task.completed ? 'opacity-50' : ''}`}>
          <h4 className={`text-sm font-medium ${task.completed ? 'text-slate-400 line-through' : 'text-slate-50'}`}>{task.title}</h4>
          <div className="flex items-center gap-2 mt-1 flex-wrap">
            <span className="text-[10px] text-slate-500 font-mono">
@@ -406,10 +479,395 @@ const TaskCard: React.FC<{ task: Task, last?: boolean, onToggle: () => void, onE
       </div>
       <button 
         onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} 
-        className="opacity-100 p-2 text-slate-500 hover:text-red-400 transition-colors"
+        className="opacity-100 p-4 -mr-2 text-slate-500 hover:text-red-400 transition-colors flex items-center justify-center"
       >
-         <Trash2 className="w-4 h-4" />
+         <Trash2 className="w-5 h-5" />
       </button>
     </div>
   );
-}
+});
+
+const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, lang: string }>(({ task, onSelectExisting, lang }) => {
+  const { updateTask, checkInDaily } = useAppStore();
+  
+  if (!task) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+        <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6 border border-indigo-500/20">
+          <Target className="w-10 h-10 text-indigo-400" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-200 mb-2">{lang === 'id' ? 'Fokus Disiplin' : 'Discipline Focus'}</h3>
+        <p className="text-sm text-slate-500 mb-8 max-w-[280px] leading-relaxed">
+          {lang === 'id' 
+            ? 'Pilih 1 tugas utama yang ingin Anda ubah menjadi kebiasaan kuat. Pantau transformasi Anda di sini.' 
+            : 'Select 1 main task you want to turn into a strong habit. Track your transformation here.'}
+        </p>
+        <button 
+          onClick={onSelectExisting}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+        >
+          {lang === 'id' ? 'Pilih Tugas Disiplin' : 'Select Discipline Task'}
+        </button>
+      </div>
+    );
+  }
+
+  const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  const yesterdayDate = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000) - 86400000).toISOString().split('T')[0];
+  
+  const d = task.disciplineData || {};
+  const checkins = d.dailyCheckins || [];
+  const lastCheckin = checkins.length > 0 ? checkins[checkins.length - 1] : null;
+  const isMissedDay = lastCheckin && lastCheckin !== today && lastCheckin !== yesterdayDate;
+  const hasStarted = checkins.length > 0;
+  
+  const handlePhotoUpload = (type: 'beforePhotoUrl' | 'afterPhotoUrl') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          updateTask({
+            ...task,
+            disciplineData: {
+              ...d,
+              [type]: event.target?.result as string
+            }
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  return (
+    <div className="animate-in fade-in duration-300 pb-8 px-1 space-y-8">
+      {/* 1. Header Info */}
+      <div className="bg-gradient-to-br from-indigo-950/40 via-slate-900/80 to-slate-900 border border-indigo-500/10 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-black/20 backdrop-blur-sm">
+        <div className="absolute -top-10 -right-10 p-6 opacity-5 rotate-12">
+          <Target className="w-48 h-48 text-indigo-400" />
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 bg-indigo-500/20 border border-indigo-500/20 px-3 py-1 rounded-full">
+              {lang === 'id' ? 'Tujuan Utama' : 'Main Goal'}
+            </span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-50 mb-6 pr-12 leading-tight tracking-tight">{task.title}</h2>
+          
+          <div className="grid grid-cols-2 gap-3">
+             <div className="bg-slate-950/60 rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Mulai' : 'Start'}</span>
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                  <Calendar className="w-4 h-4 text-indigo-400/70" />
+                  {d.startDate || task.date}
+                </div>
+             </div>
+             <div className="bg-slate-950/60 rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Target' : 'Target'}</span>
+                <input 
+                  type="date" 
+                  value={d.targetDate || ''}
+                  onChange={(e) => updateTask({ ...task, disciplineData: { ...d, targetDate: e.target.value } })}
+                  className="bg-transparent text-sm font-medium text-slate-300 focus:outline-none w-full"
+                  style={{ colorScheme: 'dark' }}
+                />
+             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Motivation Note */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-2">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            {lang === 'id' ? 'Alasan Kuat (Why)' : 'Strong Reason (Why)'}
+          </h3>
+          {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 border border-white/5">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
+        </div>
+        <div className={`bg-slate-900/50 border border-white/5 rounded-3xl p-5 shadow-sm transition-colors ${hasStarted ? 'opacity-50' : 'focus-within:border-indigo-500/30 focus-within:bg-slate-900/80'}`}>
+          <textarea 
+            value={d.motivation || ''}
+            onChange={(e) => updateTask({ ...task, disciplineData: { ...d, motivation: e.target.value } })}
+            placeholder={lang === 'id' ? 'Tuliskan alasan terdalam kenapa Anda harus mencapai ini...' : 'Write your deepest reason why you must achieve this...'}
+            disabled={hasStarted}
+            className="w-full min-h-[80px] bg-transparent text-[15px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed"
+          />
+        </div>
+      </div>
+
+      {/* 3. Journey Notes */}
+      <div>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
+          {lang === 'id' ? 'Catatan Perjalanan' : 'Journey Notes'}
+        </h3>
+        <div className="space-y-3">
+          {d.journeyLog?.map((note) => (
+            <div key={note.id} className="bg-slate-900/50 border border-white/5 rounded-2xl p-4 shadow-sm relative group">
+              <div className="flex items-center justify-between mb-2">
+                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{note.date}</span>
+                 <button 
+                   onClick={() => {
+                     const newLog = d.journeyLog?.filter(n => n.id !== note.id);
+                     updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
+                   }}
+                   className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-opacity"
+                 >
+                   <Trash2 className="w-3.5 h-3.5" />
+                 </button>
+              </div>
+              <p className="text-sm font-medium text-slate-300 leading-relaxed whitespace-pre-wrap">{note.content}</p>
+            </div>
+          ))}
+          
+          <div className="bg-slate-900/50 border border-white/5 rounded-3xl p-4 shadow-sm transition-colors focus-within:border-indigo-500/30 focus-within:bg-slate-900/80">
+            <textarea 
+              id={`new-note-${task.id}`}
+              placeholder={lang === 'id' ? 'Tulis progress harian atau kendala yang dihadapi...' : 'Write your daily progress or challenges faced...'}
+              className="w-full min-h-[80px] bg-transparent text-[14px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed mb-3"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  const textarea = document.getElementById(`new-note-${task.id}`) as HTMLTextAreaElement;
+                  if (textarea && textarea.value.trim()) {
+                    const newLog = [...(d.journeyLog || []), {
+                      id: Date.now().toString(),
+                      date: new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                      content: textarea.value.trim()
+                    }];
+                    updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
+                    textarea.value = '';
+                  }
+                }}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-sm"
+              >
+                {lang === 'id' ? 'Simpan Catatan' : 'Save Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Daily Check-in Streak */}
+      <div>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
+          {lang === 'id' ? 'Aksi Harian' : 'Daily Action'}
+        </h3>
+        <div className="bg-gradient-to-r from-orange-950/40 to-slate-900/80 border border-orange-500/10 rounded-3xl p-5 flex items-center justify-between shadow-sm relative overflow-hidden">
+          <div className="absolute -left-4 -bottom-4 opacity-5 pointer-events-none">
+             <Flame className="w-32 h-32 text-orange-500" />
+          </div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+              <Flame className="w-6 h-6 text-orange-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-200">{lang === 'id' ? 'Konsistensi' : 'Consistency'}</span>
+              <span className="text-xs text-slate-400 font-medium mt-0.5">
+                <span className="text-orange-400 font-bold text-sm">{d.dailyCheckins?.length || 0}</span> {lang === 'id' ? 'Hari Streak' : 'Day Streak'}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0];
+              const checkins = d.dailyCheckins || [];
+              if (!checkins.includes(today)) {
+                updateTask({ ...task, disciplineData: { ...d, dailyCheckins: [...checkins, today] } });
+                checkInDaily();
+              }
+            }}
+            disabled={d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])}
+            className={`relative z-10 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                : 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95'
+            }`}
+          >
+            {d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) 
+              ? (lang === 'id' ? 'Selesai Hari Ini' : 'Done Today') 
+              : (lang === 'id' ? 'Check-in Sekarang' : 'Check-in Now')}
+          </button>
+        </div>
+      </div>
+
+      {/* 5. Contract: Reward & Punishment */}
+      <div>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
+          {lang === 'id' ? 'Kontrak Komitmen' : 'Commitment Contract'}
+        </h3>
+        
+        {isMissedDay && d.punishment && !task.completed && (
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-5 mb-4 shadow-lg shadow-rose-900/10 flex items-start gap-4 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute right-0 top-0 opacity-5 pointer-events-none -translate-y-4 translate-x-4">
+              <AlertTriangle className="w-32 h-32 text-rose-500" />
+            </div>
+            <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0 border border-rose-500/30 relative z-10">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-base font-bold text-rose-400 mb-1">{lang === 'id' ? 'Anda Melewatkan Hari!' : 'You Missed a Day!'}</h3>
+              <p className="text-sm text-rose-300/80 mb-4 leading-relaxed pr-6">{lang === 'id' ? 'Sesuai komitmen awal, Anda harus menerima konsekuensi:' : 'As per your commitment, you must accept the consequence:'}</p>
+              <div className="bg-rose-950/40 rounded-2xl p-4 border border-rose-500/20 shadow-inner">
+                <span className="text-base font-bold text-rose-200">{d.punishment}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {task.completed && d.reward && (
+          <div className="bg-gradient-to-br from-emerald-900/40 to-slate-900/80 border border-emerald-500/20 rounded-3xl p-8 mb-4 shadow-xl shadow-emerald-900/10 text-center relative overflow-hidden backdrop-blur-sm">
+            <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 scale-150 transform-origin-center">
+              <Gift className="w-48 h-48 text-emerald-400" />
+            </div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-20 h-20 rounded-3xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 border border-emerald-500/30 shadow-lg shadow-emerald-500/20 rotate-3">
+                <Gift className="w-10 h-10 -rotate-3" />
+              </div>
+              <h2 className="text-2xl font-bold text-emerald-400 mb-3 tracking-tight">{lang === 'id' ? 'Misi Berhasil Ditamatkan! 🎉' : 'Mission Completed! 🎉'}</h2>
+              <p className="text-[15px] text-emerald-100/70 mb-6 max-w-[280px] leading-relaxed">
+                {lang === 'id' ? 'Luar biasa! Silakan nikmati hadiah yang telah Anda janjikan untuk diri sendiri:' : 'Awesome! Please enjoy the reward you promised yourself:'}
+              </p>
+              <div className="bg-emerald-950/60 rounded-2xl px-6 py-4 border border-emerald-500/20 shadow-inner w-full max-w-[320px]">
+                <span className="text-lg font-bold text-emerald-200">{d.reward}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-900/50 border border-white/5 rounded-3xl p-5 shadow-sm transition-colors focus-within:border-emerald-500/30 focus-within:bg-slate-900/80">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                <Gift className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{lang === 'id' ? 'Hadiah Keberhasilan' : 'Success Reward'}</h3>
+              {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 ml-auto border border-white/5">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
+            </div>
+            <textarea 
+              value={d.reward || ''}
+              onChange={(e) => updateTask({ ...task, disciplineData: { ...d, reward: e.target.value } })}
+              placeholder={lang === 'id' ? 'Apa hadiah untuk diri sendiri jika ini tercapai?' : 'What is your reward if you achieve this?'}
+              disabled={hasStarted}
+              className={`w-full min-h-[60px] bg-transparent text-[14px] font-medium text-emerald-100 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed ${hasStarted ? 'opacity-50' : ''}`}
+            />
+          </div>
+
+          <div className="bg-slate-900/50 border border-white/5 rounded-3xl p-5 shadow-sm transition-colors focus-within:border-rose-500/30 focus-within:bg-slate-900/80">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/20">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{lang === 'id' ? 'Konsekuensi Gagal' : 'Failure Consequence'}</h3>
+              {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 ml-auto border border-white/5">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
+            </div>
+            <textarea 
+              value={d.punishment || ''}
+              onChange={(e) => updateTask({ ...task, disciplineData: { ...d, punishment: e.target.value } })}
+              placeholder={lang === 'id' ? 'Apa konsekuensi jika Anda menyerah (misal: bolong 1 hari)?' : 'What is the consequence if you give up (e.g. miss 1 day)?'}
+              disabled={hasStarted}
+              className={`w-full min-h-[60px] bg-transparent text-[14px] font-medium text-rose-100 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed ${hasStarted ? 'opacity-50' : ''}`}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Transformation Photos */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-2">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang === 'id' ? 'Transformasi Visual' : 'Visual Transformation'}</h3>
+          <span className="text-[10px] text-slate-500">{lang === 'id' ? 'Ketuk foto untuk mengubah' : 'Tap photo to change'}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div 
+            onClick={() => handlePhotoUpload('beforePhotoUrl')}
+            className="aspect-[3/4] bg-slate-900/50 border border-white/5 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-slate-700 transition-colors"
+          >
+            {d.beforePhotoUrl ? (
+              <img src={d.beforePhotoUrl} alt="Before" className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                 <ImageIcon className="w-8 h-8 mb-3 opacity-30 group-hover:scale-110 transition-transform" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+              <Camera className="w-8 h-8 text-white" />
+            </div>
+            {d.beforePhotoUrl && (
+              <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 shadow-lg">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+              </div>
+            )}
+          </div>
+          
+          <div 
+            onClick={() => handlePhotoUpload('afterPhotoUrl')}
+            className="aspect-[3/4] bg-slate-900/50 border border-white/5 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/30 transition-colors"
+          >
+            {d.afterPhotoUrl ? (
+              <img src={d.afterPhotoUrl} alt="After" className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/30">
+                 <ImageIcon className="w-8 h-8 mb-3 opacity-50 group-hover:scale-110 transition-transform text-indigo-400" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">{lang === 'id' ? 'Sesudah' : 'After'}</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+              <Camera className="w-8 h-8 text-white" />
+            </div>
+            {d.afterPhotoUrl && (
+              <div className="absolute bottom-3 right-3 bg-indigo-500/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sesudah' : 'After'}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 7. Complete Mission Button */}
+      <div className="pt-8">
+        <h3 className="text-[11px] text-center font-bold text-slate-500 uppercase tracking-widest mb-4">
+          {lang === 'id' ? 'Tamatkan Fokus Disiplin Ini Secara Final' : 'Permanently Complete This Focus'}
+        </h3>
+        <div className="flex flex-col gap-3">
+          <button 
+            onClick={() => {
+              updateTask({ ...task, completed: !task.completed });
+            }}
+            className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${
+              task.completed 
+                ? 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 border border-white/5' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 active:scale-95'
+            }`}
+          >
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${task.completed ? 'bg-slate-700 border-slate-600' : 'bg-white/20 border-white/30'}`}>
+              {task.completed && <CheckSquare className="w-4 h-4 text-slate-400" />}
+            </div>
+            {task.completed 
+              ? (lang === 'id' ? 'Batalkan Status Tamat' : 'Revert Final Status') 
+              : (lang === 'id' ? 'Tamatkan Misi Utama (Final)' : 'Complete Main Mission (Final)')}
+          </button>
+
+          {task.completed && (
+             <button
+                onClick={() => {
+                  updateTask({ ...task, isArchived: true });
+                }}
+                className="w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 shadow-lg shadow-emerald-900/10 active:scale-95 mt-2"
+             >
+                <Plus className="w-5 h-5" />
+                {lang === 'id' ? 'Mulai Target Fokus Baru' : 'Start New Focus Target'}
+             </button>
+          )}
+        </div>
+      </div>
+      
+    </div>
+  );
+});

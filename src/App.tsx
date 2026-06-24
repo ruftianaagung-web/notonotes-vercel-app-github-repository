@@ -262,19 +262,19 @@ export default function App() {
 
       {/* Desktop Sidebar / Mobile Bottom Nav */}
       {currentScreen !== 'note-editor' && currentScreen !== 'game' && currentScreen !== 'tictactoe' && currentScreen !== 'puzzle' && currentScreen !== 'tetris' && currentScreen !== 'games-hub' && currentScreen !== 'finance' && (
-        <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/95 border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-safe md:pb-0 h-[72px] md:h-screen md:pt-8 md:px-4">
+        <nav className="flex-none order-last md:order-first w-full md:w-[240px] lg:w-[280px] bg-slate-900/80 backdrop-blur-xl border-t md:border-t-0 md:border-r border-slate-800 flex md:flex-col justify-between md:justify-start z-50 relative pb-[calc(env(safe-area-inset-bottom)+8px)] pt-1 md:pb-0 min-h-[80px] md:min-h-screen md:pt-8 md:px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.2)] md:shadow-[10px_0_30px_rgba(0,0,0,0.2)]">
           
           {/* Logo only visible on Desktop */}
           <div className="hidden md:flex items-center gap-3 px-4 mb-8">
-             <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center overflow-hidden">
+             <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center overflow-hidden shadow-inner">
                  <img src="/icon.png" alt="Noto Logo" className="w-full h-full object-cover" />
              </div>
-             <span className="font-black text-2xl tracking-tighter text-slate-50">
+             <span className="font-extrabold text-2xl tracking-tighter text-slate-50">
                 NOTO
              </span>
           </div>
 
-          <div className="flex flex-row md:flex-col justify-evenly md:justify-start w-full px-1 sm:px-4 md:px-0 gap-1 md:gap-2 h-full md:h-auto items-center md:items-stretch overflow-x-auto no-scrollbar relative z-10">
+          <div className="flex flex-row md:flex-col justify-evenly md:justify-start w-full px-1 sm:px-4 md:px-0 gap-1 md:gap-3 items-center md:items-stretch overflow-x-auto no-scrollbar relative z-10 py-1 md:py-0">
             <NavItem icon={<Home />} label={t('home')} active={currentScreen === 'home'} onClick={() => setCurrentScreen('home')} />
             <NavItem icon={<CheckCircle2 />} label={t('tasksMenu')} active={currentScreen === 'tasks'} onClick={() => setCurrentScreen('tasks')} />
             <NavItem icon={<Layers />} label={t('searchMenu')} active={currentScreen === 'search'} onClick={() => setCurrentScreen('search')} />
@@ -307,16 +307,16 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
   return (
     <button 
       onClick={onClick}
-      className={`relative flex items-center group transition-colors rounded-2xl md:w-full md:px-4 md:py-3.5 md:justify-start flex-col md:flex-row justify-center min-w-[64px] min-h-[56px] md:min-h-0 md:min-w-0 ${
-        active ? 'text-indigo-400 md:bg-indigo-500/10 md:text-indigo-400' : 'text-slate-500 hover:text-indigo-300 md:hover:bg-slate-800/50'
+      className={`relative flex items-center group transition-all rounded-2xl md:w-full md:px-5 md:py-4 md:justify-start flex-col md:flex-row justify-center min-w-[64px] min-h-[64px] md:min-h-0 md:min-w-0 md:mb-1 ${
+        active ? 'text-indigo-400 bg-transparent md:bg-indigo-500/10 md:text-indigo-400 md:shadow-inner md:border md:border-indigo-500/20' : 'text-slate-500 hover:text-indigo-300 md:hover:bg-slate-800/40 md:border md:border-transparent'
       }`}
     >
-      <div className={`md:hidden w-1 h-1 bg-indigo-500 rounded-full mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${active ? '!opacity-100' : ''}`}></div>
-      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] [&>svg]:stroke-[2] transition-colors md:mr-4 ${active ? '[&>svg]:stroke-indigo-400' : ''}`}>
+      <div className={`md:hidden absolute top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-500 rounded-b-full opacity-0 transition-all ${active ? '!opacity-100 top-0' : ''}`}></div>
+      <div className={`[&>svg]:w-[24px] [&>svg]:h-[24px] [&>svg]:stroke-[2] transition-colors md:mr-4 ${active ? '[&>svg]:stroke-indigo-400 drop-shadow-sm' : ''}`}>
         {icon}
       </div>
-      <span className="text-[10px] md:text-sm md:font-bold font-bold uppercase md:tracking-wider md:normal-case tracking-widest mt-0.5 md:mt-0">{label}</span>
-      {active && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full"></div>}
+      <span className={`text-[10px] md:text-sm font-bold uppercase md:tracking-wide md:normal-case mt-1 md:mt-0 transition-opacity ${active ? 'opacity-100' : 'opacity-80'}`}>{label}</span>
+      {active && <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>}
     </button>
   );
 }

@@ -45,6 +45,7 @@ interface AppContextType {
   setSavingsTargetTitle: (val: string) => void;
   savingsBalance: number;
   setSavingsBalance: React.Dispatch<React.SetStateAction<number>>;
+  checkInDaily: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -316,6 +317,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const checkInDaily = () => {
+    const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    if (lastTaskCompleted !== today) {
+      if (lastTaskCompleted) {
+        const lastDate = new Date(lastTaskCompleted);
+        const currentDate = new Date(today);
+        const MathFloorDiff = Math.round((currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (MathFloorDiff === 1) {
+          setStreak(s => s + 1);
+        } else if (MathFloorDiff > 1) {
+          setStreak(1);
+        }
+      } else {
+        setStreak(1);
+      }
+      setLastTaskCompleted(today);
+    }
+  };
+
   const addTransaction = (t: Transaction) => setTransactions(prev => [t, ...prev]);
   const updateTransaction = (id: string, updates: Partial<Transaction>) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   const deleteTransaction = (id: string) => setTransactions(prev => prev.filter(t => t.id !== id));
@@ -361,7 +382,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isUnlocked, setIsUnlocked, streak,
     reminderActive, setReminderActive, reminderTime, setReminderTime,
     savingsTarget, setSavingsTarget, savingsTargetTitle, setSavingsTargetTitle,
-    savingsBalance, setSavingsBalance
+    savingsBalance, setSavingsBalance, checkInDaily
   }), [
     notes, tasks, transactions, moods, user, searchQuery, appPin, lang,
     hasCompletedOnboarding, isUnlocked, streak,

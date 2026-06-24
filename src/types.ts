@@ -23,6 +23,19 @@ export interface Note {
   pinned?: boolean;
 }
 
+export interface DisciplineData {
+  beforePhotoUrl?: string;
+  afterPhotoUrl?: string;
+  startDate?: string;
+  targetDate?: string;
+  motivation?: string;
+  reward?: string;
+  punishment?: string;
+  dailyCheckins?: string[];
+  milestones?: { id: string; title: string; completed: boolean }[];
+  journeyLog?: { id: string; date: string; content: string }[];
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -35,6 +48,9 @@ export interface Task {
   repeat?: 'once' | 'daily';
   alarmTime?: string;
   completedDates?: string[];
+  isDiscipline?: boolean;
+  disciplineData?: DisciplineData;
+  isArchived?: boolean;
 }
 
 export interface Transaction {

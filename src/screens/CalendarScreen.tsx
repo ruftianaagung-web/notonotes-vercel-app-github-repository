@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Activity, Flame, Repeat } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
@@ -126,45 +126,49 @@ export default function CalendarScreen() {
      return dateVal;
   };
 
-  const startOfWeek = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-  const day = startOfWeek.getDay();
-  const diff = startOfWeek.getDate() - day; // Start on Sunday
-  startOfWeek.setDate(diff);
-  
-  const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
+  const { selectedTasks, startOfWeek, endOfWeek } = useMemo(() => {
+    const startOfWeek = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day; // Start on Sunday
+    startOfWeek.setDate(diff);
+    
+    const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
 
-  const selectedTasks = tasks.filter(t => {
-     const tDateStr = getTaskDateStr(t.date);
-     if (!tDateStr || !tDateStr.includes('-')) return false;
-     
-     const createdDateStr = t.createdAt || tDateStr;
-     
-     const [y, m, d] = tDateStr.split('-').map(Number);
-     const tD = new Date(y, m - 1, d);
-     const [cy, cm, cd] = createdDateStr.split('-').map(Number);
-     const cD = new Date(cy, cm - 1, cd);
+    const sTasks = tasks.filter(t => {
+       const tDateStr = getTaskDateStr(t.date);
+       if (!tDateStr || !tDateStr.includes('-')) return false;
+       
+       const createdDateStr = t.createdAt || tDateStr;
+       
+       const [y, m, d] = tDateStr.split('-').map(Number);
+       const tD = new Date(y, m - 1, d);
+       const [cy, cm, cd] = createdDateStr.split('-').map(Number);
+       const cD = new Date(cy, cm - 1, cd);
 
-     if (viewType === 'Harian') {
-       if (t.repeat === 'daily' && selectedDateStr >= createdDateStr && selectedDateStr <= todayStr) return true;
-       return tDateStr === selectedDateStr;
-     } else if (viewType === 'Mingguan') {
-       if (t.repeat === 'daily') return startOfWeek <= todayDate && endOfWeek >= cD;
-       return tD >= startOfWeek && tD <= endOfWeek;
-     } else if (viewType === 'Bulanan') {
-       if (t.repeat === 'daily') {
-         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-         return monthStart <= todayDate && new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0) >= cD;
+       if (viewType === 'Harian') {
+         if (t.repeat === 'daily' && selectedDateStr >= createdDateStr && selectedDateStr <= todayStr) return true;
+         return tDateStr === selectedDateStr;
+       } else if (viewType === 'Mingguan') {
+         if (t.repeat === 'daily') return startOfWeek <= todayDate && endOfWeek >= cD;
+         return tD >= startOfWeek && tD <= endOfWeek;
+       } else if (viewType === 'Bulanan') {
+         if (t.repeat === 'daily') {
+           const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+           return monthStart <= todayDate && new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0) >= cD;
+         }
+         return tD.getMonth() === selectedDate.getMonth() && tD.getFullYear() === selectedDate.getFullYear();
+       } else if (viewType === 'Tahunan') {
+         if (t.repeat === 'daily') {
+           const yearStart = new Date(selectedDate.getFullYear(), 0, 1);
+           return yearStart <= todayDate && new Date(selectedDate.getFullYear(), 11, 31) >= cD;
+         }
+         return tD.getFullYear() === selectedDate.getFullYear();
        }
-       return tD.getMonth() === selectedDate.getMonth() && tD.getFullYear() === selectedDate.getFullYear();
-     } else if (viewType === 'Tahunan') {
-       if (t.repeat === 'daily') {
-         const yearStart = new Date(selectedDate.getFullYear(), 0, 1);
-         return yearStart <= todayDate && new Date(selectedDate.getFullYear(), 11, 31) >= cD;
-       }
-       return tD.getFullYear() === selectedDate.getFullYear();
-     }
-     return false;
-  });
+       return false;
+    });
+    
+    return { selectedTasks: sTasks, startOfWeek, endOfWeek };
+  }, [tasks, selectedDate, viewType, selectedDateStr, todayStr, tomorrowStr, todayDate, getTaskDateStr]);
 
   const monthNames = Array.from({ length: 12 }, (_, i) => {
     return new Date(2023, i, 1).toLocaleDateString(locale, { month: 'long' });

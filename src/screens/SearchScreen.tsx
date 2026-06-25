@@ -170,7 +170,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
                    <Tag className="w-5 h-5 text-indigo-400" /> {group.name}
                  </h3>
                  <div className="space-y-4">
-                   {group.notes.length > 0 && <div className="space-y-3">{group.notes.map(n => renderNoteCard(n))}</div>}
+                   {group.notes.length > 0 && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">{group.notes.map(n => renderNoteCard(n))}</div>}
                  </div>
                </div>
              ))}
@@ -183,7 +183,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
          {filteredNotes.length > 0 && (
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><FileText className="w-4 h-4" /> {t('notes')}</h3>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {filteredNotes.map(note => renderNoteCard(note))}
             </div>
           </div>
@@ -202,39 +202,39 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
 
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">
-      <div className="flex-none h-20 border-b border-slate-800 bg-slate-900 px-6 flex items-end pb-4">
+      <div className="flex-none bg-slate-950 px-6 pt-6 pb-4 flex flex-col gap-4 border-b border-slate-800/60 sticky top-0 z-10">
         <div className="relative w-full">
            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
            <input 
              value={searchQuery}
              onChange={e => setSearchQuery(e.target.value)}
              placeholder={t('search') || "Cari catatan, tugas, atau tag..."}
-             className="w-full bg-slate-900 border border-slate-800 rounded-2xl h-12 pl-12 pr-10 text-sm text-slate-50 placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+             className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl h-12 pl-12 pr-10 text-sm text-slate-50 placeholder-slate-500 outline-none focus:border-indigo-500/50 focus:bg-slate-900 transition-all font-medium shadow-sm"
            />
            {searchQuery && (
-             <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-50">
+             <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-50 transition-colors">
                <X className="w-4 h-4" />
              </button>
            )}
         </div>
-      </div>
-      <div className="px-6 py-3 border-b border-slate-800 bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{t('grouping')}</span>
-          <div className="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-800 shrink-0 overflow-x-auto no-scrollbar">
+        
+        <div className="flex items-center justify-start overflow-x-auto no-scrollbar gap-2 pb-1">
             {['Semua', 'Level Tugas', 'Tag Catatan'].map((g, idx) => {
               const displayLabels = [t('allGroups'), t('taskLevel'), t('noteTag')];
               return (
               <button
                 key={g}
                 onClick={() => setGroupBy(g as any)}
-                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
-                  groupBy === g ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${
+                  groupBy === g 
+                    ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' 
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
                 }`}
               >
                 {displayLabels[idx]}
               </button>
             )})}
-          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24 w-full">

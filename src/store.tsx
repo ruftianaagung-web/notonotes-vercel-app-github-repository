@@ -46,6 +46,8 @@ interface AppContextType {
   savingsBalance: number;
   setSavingsBalance: React.Dispatch<React.SetStateAction<number>>;
   checkInDaily: () => void;
+  archivedTags: string[];
+  setArchivedTags: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -108,6 +110,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [moods, setMoods] = useState<MoodEntry[]>(() => {
     try {
       const s = localStorage.getItem('noto_moods');
+      if (s) return JSON.parse(s);
+    } catch(e){}
+    return [];
+  });
+
+  const [archivedTags, setArchivedTags] = useState<string[]>(() => {
+    try {
+      const s = localStorage.getItem('noto_archived_tags');
       if (s) return JSON.parse(s);
     } catch(e){}
     return [];
@@ -239,6 +249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (appPin) localStorage.setItem('noto_pin', appPin); else localStorage.removeItem('noto_pin'); }, [appPin]);
   useEffect(() => { localStorage.setItem('noto_streak', streak.toString()); }, [streak]);
   useEffect(() => { if (lastTaskCompleted) localStorage.setItem('noto_last_task_completed', lastTaskCompleted); }, [lastTaskCompleted]);
+  useEffect(() => { localStorage.setItem('noto_archived_tags', JSON.stringify(archivedTags)); }, [archivedTags]);
 
   const addNote = (note: Note) => setNotes(prev => [note, ...prev]);
   const updateNote = (note: Note) => setNotes(prev => prev.map(n => n.id === note.id ? note : n));
@@ -382,11 +393,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isUnlocked, setIsUnlocked, streak,
     reminderActive, setReminderActive, reminderTime, setReminderTime,
     savingsTarget, setSavingsTarget, savingsTargetTitle, setSavingsTargetTitle,
-    savingsBalance, setSavingsBalance, checkInDaily
+    savingsBalance, setSavingsBalance, checkInDaily,
+    archivedTags, setArchivedTags
   }), [
     notes, tasks, transactions, moods, user, searchQuery, appPin, lang,
     hasCompletedOnboarding, isUnlocked, streak,
-    reminderActive, reminderTime, savingsTarget, savingsTargetTitle, savingsBalance
+    reminderActive, reminderTime, savingsTarget, savingsTargetTitle, savingsBalance,
+    archivedTags
   ]);
 
   return (

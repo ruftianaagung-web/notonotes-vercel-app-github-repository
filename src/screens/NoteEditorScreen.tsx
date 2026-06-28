@@ -226,6 +226,28 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
             </div>
           )}
           <button
+            onClick={() => {
+              const currTitle = titleRef.current;
+              const currContent = contentRef.current;
+              const currTags = tagsRef.current;
+              
+              if (note.id && notes.some(n => n.id === note.id)) {
+                 updateNote({ ...note, title: currTitle, content: currContent, tags: currTags, isArchived: !note.isArchived });
+              } else {
+                 addNote({ ...note, title: currTitle, content: currContent, tags: currTags, isArchived: !note.isArchived });
+              }
+              onBack();
+            }}
+            className="p-3 hover:text-indigo-400 transition-colors cursor-pointer text-slate-400 relative group"
+            title={note.isArchived ? (lang === 'id' ? 'Batal Arsipkan' : 'Unarchive') : (lang === 'id' ? 'Arsipkan' : 'Archive')}
+          >
+            {note.isArchived ? (
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="9 10 12 7 15 10"></polyline><line x1="12" y1="7" x2="12" y2="15"></line><polyline points="21 8 21 21 3 21 3 8"></polyline><line x1="23" y1="3" x2="1" y2="3"></line><line x1="23" y1="8" x2="1" y2="8"></line></svg>
+            ) : (
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+            )}
+          </button>
+          <button
             className="p-3 -mr-2 hover:text-red-400 transition-colors cursor-pointer text-slate-400"
             onClick={() => setShowDeleteConfirm(true)}
           >

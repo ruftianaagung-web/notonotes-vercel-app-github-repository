@@ -21,6 +21,7 @@ export interface Note {
   thumbnailUrl?: string;
   content: string;
   pinned?: boolean;
+  isArchived?: boolean;
 }
 
 export interface DisciplineData {
@@ -35,6 +36,7 @@ export interface DisciplineData {
   reward?: string;
   punishment?: string;
   dailyCheckins?: string[];
+  usedRestDates?: string[];
   milestones?: { id: string; title: string; completed: boolean }[];
   journeyLog?: { id: string; date: string; content: string }[];
 }
@@ -53,7 +55,6 @@ export interface Task {
   completedDates?: string[];
   isDiscipline?: boolean;
   disciplineData?: DisciplineData;
-  isArchived?: boolean;
 }
 
 export interface Transaction {

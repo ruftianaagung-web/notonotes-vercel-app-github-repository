@@ -111,9 +111,9 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   const todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
   const { pinnedNotes, pinnedTasks, disciplineTask, todayTasks, activeTasksCount, totalTodayCount, progressPercent } = useMemo(() => {
-    const pNotes = (notes || []).filter(n => n && n.pinned);
+    const pNotes = (notes || []).filter(n => n && n.pinned && !n.isArchived);
     const pTasks = (tasks || []).filter(t => t && t.pinned && !t.isDiscipline);
-    const dTask = (tasks || []).find(t => t && t.isDiscipline && !t.isArchived);
+    const dTask = (tasks || []).find(t => t && t.isDiscipline);
 
     const isToday = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
     
@@ -416,7 +416,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                 <Pin className={`w-5 h-5 text-orange-400 fill-orange-400 drop-shadow-sm`} />
                 {t('topPriority')}
              </h3>
-             <button onClick={() => { setSearchQuery(''); onNavigate('search'); }} className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-full transition-colors">{t('allTasks') || 'Semua'}</button>
+             <button onClick={() => { onNavigate('tasks'); }} className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-full transition-colors">{t('allTasks') || 'Semua'}</button>
           </div>
           
           <div className="grid grid-cols-1 gap-2">

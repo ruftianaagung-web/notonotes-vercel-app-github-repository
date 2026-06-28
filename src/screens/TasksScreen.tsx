@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Trash2, ClipboardList, Repeat, Bell, X, Target, Image as ImageIcon, Calendar, CheckSquare, Pencil, Camera, ChevronRight, Flame, Gift, AlertTriangle, Pin } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
@@ -15,7 +15,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
   const [newTaskDate, setNewTaskDate] = useState<string>(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
   const [newTaskAlarm, setNewTaskAlarm] = useState<string>('');
   const [newTaskIsDiscipline, setNewTaskIsDiscipline] = useState<boolean>(false);
-  const { tasks, addTask, updateTask, toggleTask, lang } = useAppStore();
+  const { tasks, addTask, updateTask, toggleTask, lang, checkInDaily } = useAppStore();
   const t = useTranslation(lang);
 
   const openEditTask = useCallback((task: Task) => {
@@ -136,7 +136,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
     const upcomingTasks = uncompleted.filter(isUpcomingTask);
     const noDateTasks = uncompleted.filter(isNoDateTask);
 
-    const disciplineTask = tasks.find(t => t.isDiscipline && !t.isArchived);
+    const disciplineTask = tasks.find(t => t.isDiscipline);
 
     return { todayTasks, overdueTasks, upcomingTasks, noDateTasks, completedTasks: completed, disciplineTask, filteredTasks: uncompleted };
   }, [tasks]);
@@ -411,7 +411,6 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            </div>
         </div>
       )}
-
     </div>
   );
 }
@@ -501,6 +500,7 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
   const { updateTask, checkInDaily } = useAppStore();
   const [fullScreenImage, setFullScreenImage] = useState<{ url: string, type: 'beforePhotoUrl' | 'afterPhotoUrl' | 'after1MonthPhotoUrl' | 'after6MonthsPhotoUrl' | 'after1YearPhotoUrl' } | null>(null);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Aksi' | 'Jurnal' | 'Galeri'>('Aksi');
   
   if (!task) {
     return (
@@ -567,9 +567,26 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
     });
   };
 
+  const parseDate = (dStr: string) => new Date(dStr).getTime();
+  const daysSinceStart = Math.max(1, Math.floor((parseDate(today) - parseDate(d.startDate || task.date)) / 86400000) + 1);
+  const pastDays = daysSinceStart - 1;
+  const pastCheckins = checkins.includes(today) ? checkins.length - 1 : checkins.length;
+  const pastRests = (d.usedRestDates || []).includes(today) ? (d.usedRestDates || []).length - 1 : (d.usedRestDates || []).length;
+  const daysMissed = Math.max(0, pastDays - pastCheckins - pastRests);
+  
+  const daysDone = checkins.length;
+  
+  let daysLeftText = lang === 'id' ? 'Tanpa target' : 'No target';
+  let totalTargetDays = 0;
+  if (d.targetDate) {
+    const daysLeft = Math.max(0, Math.floor((parseDate(d.targetDate) - parseDate(today)) / 86400000));
+    daysLeftText = `${daysLeft} ${lang === 'id' ? 'hari' : 'days'}`;
+    totalTargetDays = Math.max(daysDone + daysMissed + daysLeft, Math.floor((parseDate(d.targetDate) - parseDate(d.startDate || task.date)) / 86400000) + 1);
+  }
+
   return (
-    <div className="animate-in fade-in duration-300 pb-8 px-1 space-y-8">
-      {/* 1. Header Info */}
+    <div className="animate-in fade-in duration-300 pb-8 px-1 space-y-6">
+      {/* Header Profile */}
       <div className="bg-gradient-to-br from-indigo-500/10 via-slate-900/80 to-slate-900 border border-indigo-500/10 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="absolute -top-10 -right-10 p-6 opacity-5 rotate-12">
           <Target className="w-48 h-48 text-indigo-400" />
@@ -579,8 +596,13 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
             <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 bg-indigo-500/20 border border-indigo-500/20 px-3 py-1 rounded-full">
               {lang === 'id' ? 'Tujuan Utama' : 'Main Goal'}
             </span>
+            {hasStarted && (
+              <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full flex items-center gap-1">
+                <Flame className="w-3 h-3" /> {d.dailyCheckins?.length || 0} {lang === 'id' ? 'Hari Streak' : 'Day Streak'}
+              </span>
+            )}
           </div>
-          <div className="flex justify-between items-start gap-4 mb-6">
+          <div className="flex justify-between items-start gap-4 mb-5">
             <h2 className="text-2xl font-bold text-slate-50 pr-4 leading-tight tracking-tight">{task.title}</h2>
             <button
               onClick={() => updateTask({ ...task, pinned: !task.pinned })}
@@ -591,454 +613,406 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
             </button>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 mb-3">
-             <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Mulai' : 'Start'}</span>
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <Calendar className="w-4 h-4 text-indigo-400/70" />
-                  {d.startDate || task.date}
-                </div>
+          {/* Progress Stats */}
+          <div className="space-y-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
+             <div className="flex items-center justify-between text-xs font-medium">
+               <div className="flex flex-col">
+                 <span className="text-slate-400 mb-1">{lang === 'id' ? 'Selesai' : 'Done'}</span>
+                 <span className="text-emerald-400 font-bold text-sm">{daysDone} <span className="text-xs font-normal opacity-80">{lang === 'id' ? 'hari' : 'days'}</span></span>
+               </div>
+               <div className="flex flex-col text-center">
+                 <span className="text-slate-400 mb-1">{lang === 'id' ? 'Bolong' : 'Missed'}</span>
+                 <span className="text-rose-400 font-bold text-sm">{daysMissed} <span className="text-xs font-normal opacity-80">{lang === 'id' ? 'hari' : 'days'}</span></span>
+               </div>
+               <div className="flex flex-col text-right">
+                 <span className="text-slate-400 mb-1">{lang === 'id' ? 'Sisa' : 'Left'}</span>
+                 <span className="text-indigo-400 font-bold text-sm">{daysLeftText}</span>
+               </div>
              </div>
-             <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Target' : 'Target'}</span>
-                <input 
-                  type="date" 
-                  value={d.targetDate || ''}
-                  onChange={(e) => updateTask({ ...task, disciplineData: { ...d, targetDate: e.target.value } })}
-                  className="bg-transparent text-sm font-medium text-slate-300 focus:outline-none w-full"
-                  
-                />
-             </div>
-          </div>
-          
-          <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 flex items-center justify-between">
-             <div className="flex flex-col">
-               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 block">{lang === 'id' ? 'Alarm Pengingat' : 'Reminder Alarm'}</span>
-               <span className="text-[10px] text-slate-400">{lang === 'id' ? 'Aktif setiap hari' : 'Active every day'}</span>
-             </div>
-             <div className="flex items-center gap-2">
-               <Bell className="w-4 h-4 text-indigo-400/70" />
-               <input 
-                 type="time" 
-                 value={task.alarmTime || ''}
-                 onChange={(e) => updateTask({ ...task, alarmTime: e.target.value || undefined })}
-                 className="bg-transparent text-sm font-bold text-slate-200 focus:outline-none"
-                 
-               />
-             </div>
+             
+             {/* Progress Bar */}
+             {totalTargetDays > 0 ? (
+               <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden flex">
+                 <div style={{ width: `${(daysDone / totalTargetDays) * 100}%` }} className="bg-emerald-500 h-full transition-all duration-500"></div>
+                 <div style={{ width: `${(daysMissed / totalTargetDays) * 100}%` }} className="bg-rose-500 h-full transition-all duration-500"></div>
+               </div>
+             ) : (
+               <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden flex">
+                 <div style={{ width: `${(daysDone / (daysDone + daysMissed || 1)) * 100}%` }} className="bg-emerald-500 h-full transition-all duration-500"></div>
+                 <div style={{ width: `${(daysMissed / (daysDone + daysMissed || 1)) * 100}%` }} className="bg-rose-500 h-full transition-all duration-500"></div>
+               </div>
+             )}
           </div>
         </div>
       </div>
 
-      {/* 2. Motivation Note */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-2">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-            {lang === 'id' ? 'Alasan Kuat (Why)' : 'Strong Reason (Why)'}
-          </h3>
-          {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 border border-slate-800">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
-        </div>
-        <div className={`bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-sm transition-colors ${hasStarted ? 'opacity-50' : 'focus-within:border-indigo-500/30 focus-within:bg-slate-900/80'}`}>
-          <textarea 
-            value={d.motivation || ''}
-            onChange={(e) => updateTask({ ...task, disciplineData: { ...d, motivation: e.target.value } })}
-            placeholder={lang === 'id' ? 'Tuliskan alasan terdalam kenapa Anda harus mencapai ini...' : 'Write your deepest reason why you must achieve this...'}
-            disabled={hasStarted}
-            className="w-full min-h-[80px] bg-transparent text-[15px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed"
-          />
-        </div>
-      </div>
-
-      {/* 3. Journey Notes */}
-      <div>
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
-          {lang === 'id' ? 'Catatan Perjalanan' : 'Journey Notes'}
-        </h3>
-        <div className="space-y-3">
-          {d.journeyLog?.map((note) => (
-            <div key={note.id} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-sm relative group">
-              <div className="flex items-center justify-between mb-2">
-                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{note.date}</span>
-                 <button 
-                   onClick={() => {
-                     const newLog = d.journeyLog?.filter(n => n.id !== note.id);
-                     updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
-                   }}
-                   className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-400 transition-opacity"
-                 >
-                   <Trash2 className="w-3.5 h-3.5" />
-                 </button>
-              </div>
-              <p className="text-sm font-medium text-slate-300 leading-relaxed whitespace-pre-wrap">{note.content}</p>
-            </div>
-          ))}
-          
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-4 shadow-sm transition-colors focus-within:border-indigo-500/30 focus-within:bg-slate-900/80">
-            <textarea 
-              id={`new-note-${task.id}`}
-              placeholder={lang === 'id' ? 'Tulis progress harian atau kendala yang dihadapi...' : 'Write your daily progress or challenges faced...'}
-              className="w-full min-h-[80px] bg-transparent text-[14px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed mb-3"
-            />
-            <div className="flex justify-end">
-              <button
-                onClick={() => {
-                  const textarea = document.getElementById(`new-note-${task.id}`) as HTMLTextAreaElement;
-                  if (textarea && textarea.value.trim()) {
-                    const newLog = [...(d.journeyLog || []), {
-                      id: Date.now().toString(),
-                      date: new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
-                      content: textarea.value.trim()
-                    }];
-                    updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
-                    textarea.value = '';
-                  }
-                }}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-sm"
-              >
-                {lang === 'id' ? 'Simpan Catatan' : 'Save Note'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Daily Check-in Streak */}
-      <div>
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
-          {lang === 'id' ? 'Aksi Harian' : 'Daily Action'}
-        </h3>
-        <div className="bg-gradient-to-r from-orange-500/10 to-slate-900/80 border border-orange-500/10 rounded-3xl p-5 flex items-center justify-between shadow-sm relative overflow-hidden">
-          <div className="absolute -left-4 -bottom-4 opacity-5 pointer-events-none">
-             <Flame className="w-32 h-32 text-orange-500" />
-          </div>
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-              <Flame className="w-6 h-6 text-orange-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-200">{lang === 'id' ? 'Konsistensi' : 'Consistency'}</span>
-              <span className="text-xs text-slate-400 font-medium mt-0.5">
-                <span className="text-orange-400 font-bold text-sm">{d.dailyCheckins?.length || 0}</span> {lang === 'id' ? 'Hari Streak' : 'Day Streak'}
-              </span>
-            </div>
-          </div>
+      {/* Custom Tabs */}
+      <div className="flex gap-2 p-1 bg-slate-900/50 border border-slate-800/80 rounded-2xl">
+        {(['Aksi', 'Jurnal', 'Galeri'] as const).map(tab => (
           <button
-            onClick={() => {
-              const today = new Date().toISOString().split('T')[0];
-              const checkins = d.dailyCheckins || [];
-              if (!checkins.includes(today)) {
-                updateTask({ ...task, disciplineData: { ...d, dailyCheckins: [...checkins, today] } });
-                checkInDaily();
-              }
-            }}
-            disabled={d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])}
-            className={`relative z-10 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-              d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])
-                ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-800'
-                : 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95'
-            }`}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800/50'}`}
           >
-            {d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) 
-              ? (lang === 'id' ? 'Selesai Hari Ini' : 'Done Today') 
-              : (lang === 'id' ? 'Check-in Sekarang' : 'Check-in Now')}
+            {tab}
           </button>
-        </div>
+        ))}
       </div>
 
-      {/* 5. Contract: Reward & Punishment */}
-      <div>
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
-          {lang === 'id' ? 'Kontrak Komitmen' : 'Commitment Contract'}
-        </h3>
-        
-        {isMissedDay && d.punishment && !task.completed && (
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-5 mb-4 shadow-lg shadow-rose-900/10 flex items-start gap-4 backdrop-blur-sm relative overflow-hidden">
-            <div className="absolute right-0 top-0 opacity-5 pointer-events-none -translate-y-4 translate-x-4">
-              <AlertTriangle className="w-32 h-32 text-rose-500" />
+      <div className="pt-2">
+        {/* TAB: AKSI */}
+        {activeTab === 'Aksi' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Daily Check-in Streak */}
+            <div className="bg-gradient-to-r from-orange-500/10 to-slate-900/80 border border-orange-500/10 rounded-3xl p-5 flex flex-col gap-4 shadow-sm relative overflow-hidden">
+              <div className="absolute -left-4 -bottom-4 opacity-5 pointer-events-none">
+                 <Flame className="w-32 h-32 text-orange-500" />
+              </div>
+              <div className="flex flex-col gap-3 relative z-10">
+                <button
+                  onClick={() => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const checkinsArr = d.dailyCheckins || [];
+                    if (!checkinsArr.includes(todayStr)) {
+                      updateTask({ ...task, disciplineData: { ...d, dailyCheckins: [...checkinsArr, todayStr] } });
+                      checkInDaily();
+                    }
+                  }}
+                  disabled={d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])}
+                  className={`w-full px-5 py-4 rounded-2xl font-bold text-sm transition-all ${
+                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])
+                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-800'
+                      : 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95'
+                  }`}
+                >
+                  {d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) 
+                    ? (lang === 'id' ? 'Selesai Hari Ini' : 'Done Today') 
+                    : (lang === 'id' ? 'Check-in Sekarang' : 'Check-in Now')}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const checkinsArr = d.dailyCheckins || [];
+                    const rests = d.usedRestDates || [];
+                    if (!checkinsArr.includes(todayStr)) {
+                      updateTask({ 
+                        ...task, 
+                        disciplineData: { 
+                          ...d, 
+                          dailyCheckins: [...checkinsArr, todayStr],
+                          usedRestDates: [...rests, todayStr]
+                        } 
+                      });
+                      checkInDaily();
+                    }
+                  }}
+                  disabled={
+                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || 
+                    ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
+                  }
+                  className={`w-full px-5 py-3 rounded-2xl font-bold text-sm transition-all border ${
+                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
+                      ? 'bg-slate-900/50 text-slate-500 border-slate-800 cursor-not-allowed'
+                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 border-slate-700 active:scale-95'
+                  }`}
+                >
+                  {lang === 'id' ? 'Gunakan Jatah Libur (1x/Minggu)' : 'Use Rest Day (1x/Week)'}
+                </button>
+              </div>
             </div>
-            <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0 border border-rose-500/30 relative z-10">
-              <AlertTriangle className="w-6 h-6" />
+            
+            {/* Missed / Success Status */}
+            {isMissedDay && d.punishment && !task.completed && (
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-5 shadow-lg shadow-rose-900/10 flex items-start gap-4 backdrop-blur-sm relative overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0 border border-rose-500/30 relative z-10">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-base font-bold text-rose-400 mb-1">{lang === 'id' ? 'Anda Melewatkan Hari!' : 'You Missed a Day!'}</h3>
+                  <p className="text-sm text-slate-400 mb-3 leading-relaxed pr-6">{lang === 'id' ? 'Sesuai komitmen awal, Anda harus menerima konsekuensi:' : 'As per your commitment, you must accept the consequence:'}</p>
+                  <div className="bg-rose-500/10 rounded-2xl p-4 border border-rose-500/20 shadow-inner">
+                    <span className="text-sm font-bold text-slate-100">{d.punishment}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {task.completed && d.reward && (
+              <div className="bg-gradient-to-br from-emerald-500/10 to-slate-900/80 border border-emerald-500/20 rounded-3xl p-6 shadow-xl text-center">
+                <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mx-auto mb-4 border border-emerald-500/30 rotate-3">
+                  <Gift className="w-8 h-8 -rotate-3" />
+                </div>
+                <h2 className="text-xl font-bold text-emerald-400 mb-2">{lang === 'id' ? 'Misi Berhasil Ditamatkan! 🎉' : 'Mission Completed! 🎉'}</h2>
+                <div className="bg-emerald-500/10 rounded-2xl px-4 py-3 border border-emerald-500/20 inline-block mt-2">
+                  <span className="text-base font-bold text-slate-100">{d.reward}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Date & Settings */}
+            <div className="grid grid-cols-2 gap-3">
+               <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Mulai' : 'Start'}</span>
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <Calendar className="w-4 h-4 text-indigo-400/70" />
+                    {d.startDate || task.date}
+                  </div>
+               </div>
+               <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2 block">{lang === 'id' ? 'Target' : 'Target'}</span>
+                  <input 
+                    type="date" 
+                    value={d.targetDate || ''}
+                    onChange={(e) => updateTask({ ...task, disciplineData: { ...d, targetDate: e.target.value } })}
+                    className="bg-transparent text-sm font-medium text-slate-300 focus:outline-none w-full"
+                  />
+               </div>
             </div>
-            <div className="relative z-10">
-              <h3 className="text-base font-bold text-rose-400 mb-1">{lang === 'id' ? 'Anda Melewatkan Hari!' : 'You Missed a Day!'}</h3>
-              <p className="text-sm text-slate-400 mb-4 leading-relaxed pr-6">{lang === 'id' ? 'Sesuai komitmen awal, Anda harus menerima konsekuensi:' : 'As per your commitment, you must accept the consequence:'}</p>
-              <div className="bg-rose-500/10 rounded-2xl p-4 border border-rose-500/20 shadow-inner">
-                <span className="text-base font-bold text-slate-100">{d.punishment}</span>
+            
+            <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 flex items-center justify-between">
+               <div className="flex flex-col">
+                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 block">{lang === 'id' ? 'Alarm Pengingat' : 'Reminder Alarm'}</span>
+                 <span className="text-[10px] text-slate-400">{lang === 'id' ? 'Aktif setiap hari' : 'Active every day'}</span>
+               </div>
+               <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-xl border border-slate-800">
+                 <Bell className="w-4 h-4 text-indigo-400/70" />
+                 <input 
+                   type="time" 
+                   value={task.alarmTime || ''}
+                   onChange={(e) => updateTask({ ...task, alarmTime: e.target.value || undefined })}
+                   className="bg-transparent text-sm font-bold text-slate-200 focus:outline-none w-20"
+                 />
+               </div>
+            </div>
+
+            {/* Contract Rules */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">{lang === 'id' ? 'Kontrak Komitmen' : 'Commitment Contract'}</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 transition-colors focus-within:border-emerald-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Gift className="w-4 h-4 text-emerald-400" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{lang === 'id' ? 'Hadiah Keberhasilan' : 'Success Reward'}</span>
+                  </div>
+                  <textarea 
+                    value={d.reward || ''}
+                    onChange={(e) => updateTask({ ...task, disciplineData: { ...d, reward: e.target.value } })}
+                    placeholder={lang === 'id' ? 'Apa hadiah jika tercapai?' : 'What is your reward?'}
+                    disabled={hasStarted}
+                    className={`w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none min-h-[40px] ${hasStarted ? 'opacity-50' : ''}`}
+                  />
+                </div>
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 transition-colors focus-within:border-rose-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{lang === 'id' ? 'Konsekuensi Gagal' : 'Failure Consequence'}</span>
+                  </div>
+                  <textarea 
+                    value={d.punishment || ''}
+                    onChange={(e) => updateTask({ ...task, disciplineData: { ...d, punishment: e.target.value } })}
+                    placeholder={lang === 'id' ? 'Apa konsekuensinya?' : 'What is the consequence?'}
+                    disabled={hasStarted}
+                    className={`w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none min-h-[40px] ${hasStarted ? 'opacity-50' : ''}`}
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {task.completed && d.reward && (
-          <div className="bg-gradient-to-br from-emerald-500/10 to-slate-900/80 border border-emerald-500/20 rounded-3xl p-8 mb-4 shadow-xl shadow-emerald-900/10 text-center relative overflow-hidden backdrop-blur-sm">
-            <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 scale-150 transform-origin-center">
-              <Gift className="w-48 h-48 text-emerald-400" />
-            </div>
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-20 h-20 rounded-3xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 border border-emerald-500/30 shadow-lg shadow-emerald-500/20 rotate-3">
-                <Gift className="w-10 h-10 -rotate-3" />
+        {/* TAB: JURNAL */}
+        {activeTab === 'Jurnal' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div>
+              <div className="flex items-center justify-between mb-3 px-2">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang === 'id' ? 'Alasan Kuat (Why)' : 'Strong Reason (Why)'}</h3>
+                {hasStarted && <span className="text-[10px] font-bold bg-slate-800 px-2 py-0.5 rounded text-slate-400">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
               </div>
-              <h2 className="text-2xl font-bold text-emerald-400 mb-3 tracking-tight">{lang === 'id' ? 'Misi Berhasil Ditamatkan! 🎉' : 'Mission Completed! 🎉'}</h2>
-              <p className="text-[15px] text-slate-200/70 mb-6 max-w-[280px] leading-relaxed">
-                {lang === 'id' ? 'Luar biasa! Silakan nikmati hadiah yang telah Anda janjikan untuk diri sendiri:' : 'Awesome! Please enjoy the reward you promised yourself:'}
-              </p>
-              <div className="bg-emerald-500/10 rounded-2xl px-6 py-4 border border-emerald-500/20 shadow-inner w-full max-w-[320px]">
-                <span className="text-lg font-bold text-slate-100">{d.reward}</span>
+              <div className={`bg-slate-900/80 border border-slate-800 rounded-2xl p-4 ${hasStarted ? 'opacity-70' : 'focus-within:border-indigo-500/30'}`}>
+                <textarea 
+                  value={d.motivation || ''}
+                  onChange={(e) => updateTask({ ...task, disciplineData: { ...d, motivation: e.target.value } })}
+                  placeholder={lang === 'id' ? 'Alasan terdalam kenapa harus mencapai ini...' : 'Deepest reason to achieve this...'}
+                  disabled={hasStarted}
+                  className="w-full min-h-[80px] bg-transparent text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">{lang === 'id' ? 'Catatan Harian' : 'Daily Notes'}</h3>
+              
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 focus-within:border-indigo-500/30 mb-4 shadow-sm">
+                <textarea 
+                  id={`new-note-${task.id}`}
+                  placeholder={lang === 'id' ? 'Progress hari ini...' : 'Today\'s progress...'}
+                  className="w-full min-h-[60px] bg-transparent text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none mb-3"
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      const textarea = document.getElementById(`new-note-${task.id}`) as HTMLTextAreaElement;
+                      if (textarea && textarea.value.trim()) {
+                        const newLog = [...(d.journeyLog || []), {
+                          id: Date.now().toString(),
+                          date: new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                          content: textarea.value.trim()
+                        }];
+                        updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
+                        textarea.value = '';
+                      }
+                    }}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-colors"
+                  >
+                    {lang === 'id' ? 'Simpan' : 'Save'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {d.journeyLog?.slice().reverse().map((note) => (
+                  <div key={note.id} className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 group">
+                    <div className="flex items-center justify-between mb-2">
+                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{note.date}</span>
+                       <button 
+                         onClick={() => {
+                           const newLog = d.journeyLog?.filter(n => n.id !== note.id);
+                           updateTask({ ...task, disciplineData: { ...d, journeyLog: newLog } });
+                         }}
+                         className="text-slate-500 hover:text-red-400 transition-opacity"
+                       >
+                         <Trash2 className="w-3.5 h-3.5" />
+                       </button>
+                    </div>
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-sm transition-colors focus-within:border-emerald-500/30 focus-within:bg-slate-900/80">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                <Gift className="w-4 h-4" />
+        {/* TAB: GALERI */}
+        {activeTab === 'Galeri' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">{lang === 'id' ? 'Transformasi Visual' : 'Visual Transformation'}</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div 
+                onClick={() => d.beforePhotoUrl ? setFullScreenImage({ url: d.beforePhotoUrl, type: 'beforePhotoUrl' }) : handlePhotoUpload('beforePhotoUrl')}
+                className="aspect-[3/4] bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-slate-700"
+              >
+                {d.beforePhotoUrl ? (
+                  <>
+                    <img src={d.beforePhotoUrl} alt="Before" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                     <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
+                     <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+                  </div>
+                )}
               </div>
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{lang === 'id' ? 'Hadiah Keberhasilan' : 'Success Reward'}</h3>
-              {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 ml-auto border border-slate-800">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
-            </div>
-            <textarea 
-              value={d.reward || ''}
-              onChange={(e) => updateTask({ ...task, disciplineData: { ...d, reward: e.target.value } })}
-              placeholder={lang === 'id' ? 'Apa hadiah untuk diri sendiri jika ini tercapai?' : 'What is your reward if you achieve this?'}
-              disabled={hasStarted}
-              className={`w-full min-h-[60px] bg-transparent text-[14px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed ${hasStarted ? 'opacity-50' : ''}`}
-            />
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-sm transition-colors focus-within:border-rose-500/30 focus-within:bg-slate-900/80">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/20">
-                <AlertTriangle className="w-4 h-4" />
+              
+              <div 
+                onClick={() => d.afterPhotoUrl ? setFullScreenImage({ url: d.afterPhotoUrl, type: 'afterPhotoUrl' }) : handlePhotoUpload('afterPhotoUrl')}
+                className="aspect-[3/4] bg-indigo-500/10 border border-slate-800 rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/30"
+              >
+                {d.afterPhotoUrl ? (
+                  <>
+                    <img src={d.afterPhotoUrl} alt="After" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-2 right-2 bg-indigo-500/80 backdrop-blur-md px-2 py-1 rounded-lg border border-white/20">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sesudah' : 'After'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/40">
+                     <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
+                     <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? 'Sesudah' : 'After'}</span>
+                  </div>
+                )}
               </div>
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{lang === 'id' ? 'Konsekuensi Gagal' : 'Failure Consequence'}</h3>
-              {hasStarted && <span className="text-[10px] font-bold bg-slate-800/80 px-2 py-0.5 rounded-md text-slate-400 ml-auto border border-slate-800">{lang === 'id' ? 'Terkunci' : 'Locked'}</span>}
             </div>
-            <textarea 
-              value={d.punishment || ''}
-              onChange={(e) => updateTask({ ...task, disciplineData: { ...d, punishment: e.target.value } })}
-              placeholder={lang === 'id' ? 'Apa konsekuensi jika Anda menyerah (misal: bolong 1 hari)?' : 'What is the consequence if you give up (e.g. miss 1 day)?'}
-              disabled={hasStarted}
-              className={`w-full min-h-[60px] bg-transparent text-[14px] font-medium text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none leading-relaxed ${hasStarted ? 'opacity-50' : ''}`}
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* 6. Transformation Photos */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-2">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang === 'id' ? 'Transformasi Visual' : 'Visual Transformation'}</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div 
-            onClick={() => d.beforePhotoUrl ? setFullScreenImage({ url: d.beforePhotoUrl, type: 'beforePhotoUrl' }) : handlePhotoUpload('beforePhotoUrl')}
-            className="aspect-[3/4] bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-slate-700 transition-colors"
-          >
-            {d.beforePhotoUrl ? (
-              <>
-                <img src={d.beforePhotoUrl} alt="Before" className="w-full h-full object-cover" />
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 shadow-lg">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+            <button 
+              onClick={() => setShowAllPhotos(!showAllPhotos)}
+              className="w-full py-3 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-300 transition-colors uppercase tracking-wider"
+            >
+              {showAllPhotos ? (lang === 'id' ? 'Tutup Milestone' : 'Close Milestones') : (lang === 'id' ? 'Tampilkan Milestone Bulanan' : 'Show Monthly Milestones')}
+            </button>
+
+            {showAllPhotos && (
+              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div 
+                  onClick={() => d.after1MonthPhotoUrl ? setFullScreenImage({ url: d.after1MonthPhotoUrl, type: 'after1MonthPhotoUrl' }) : handlePhotoUpload('after1MonthPhotoUrl')}
+                  className="aspect-[3/4] bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden relative group cursor-pointer hover:border-slate-700"
+                >
+                  {d.after1MonthPhotoUrl ? (
+                    <>
+                      <img src={d.after1MonthPhotoUrl} alt="1 Month" className="w-full h-full object-cover" />
+                      <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? '1 Bulan' : '1 Month'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                       <ImageIcon className="w-6 h-6 mb-2 opacity-30" />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? '1 Bulan' : '1 Month'}</span>
+                    </div>
+                  )}
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                   <ImageIcon className="w-8 h-8 mb-3 opacity-30 group-hover:scale-110 transition-transform" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? 'Sebelum' : 'Before'}</span>
+
+                <div 
+                  onClick={() => d.after6MonthsPhotoUrl ? setFullScreenImage({ url: d.after6MonthsPhotoUrl, type: 'after6MonthsPhotoUrl' }) : handlePhotoUpload('after6MonthsPhotoUrl')}
+                  className="aspect-[3/4] bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden relative group cursor-pointer hover:border-slate-700"
+                >
+                  {d.after6MonthsPhotoUrl ? (
+                    <>
+                      <img src={d.after6MonthsPhotoUrl} alt="6 Months" className="w-full h-full object-cover" />
+                      <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? '6 Bulan' : '6 Months'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                       <ImageIcon className="w-6 h-6 mb-2 opacity-30" />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">{lang === 'id' ? '6 Bulan' : '6 Months'}</span>
+                    </div>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           </div>
-          
-          <div 
-            onClick={() => d.afterPhotoUrl ? setFullScreenImage({ url: d.afterPhotoUrl, type: 'afterPhotoUrl' }) : handlePhotoUpload('afterPhotoUrl')}
-            className="aspect-[3/4] bg-indigo-500/10 border border-slate-800 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/30 transition-colors"
-          >
-            {d.afterPhotoUrl ? (
-              <>
-                <img src={d.afterPhotoUrl} alt="After" className="w-full h-full object-cover" />
-                <div className="absolute bottom-3 right-3 bg-indigo-500/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? 'Sesudah' : 'After'}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/30">
-                   <ImageIcon className="w-8 h-8 mb-3 opacity-50 group-hover:scale-110 transition-transform text-indigo-400" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">{lang === 'id' ? 'Sesudah' : 'After'}</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {showAllPhotos && (
-            <>
-              <div 
-                onClick={() => d.after1MonthPhotoUrl ? setFullScreenImage({ url: d.after1MonthPhotoUrl, type: 'after1MonthPhotoUrl' }) : handlePhotoUpload('after1MonthPhotoUrl')}
-                className="aspect-[3/4] bg-indigo-500/5 border border-slate-800 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/20 transition-colors"
-              >
-                {d.after1MonthPhotoUrl ? (
-                  <>
-                    <img src={d.after1MonthPhotoUrl} alt="1 Month" className="w-full h-full object-cover" />
-                    <div className="absolute bottom-3 right-3 bg-indigo-500/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? '1 Bulan' : '1 Month'}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/20">
-                       <ImageIcon className="w-8 h-8 mb-3 opacity-40 group-hover:scale-110 transition-transform text-indigo-300" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">{lang === 'id' ? '1 Bulan' : '1 Month'}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div 
-                onClick={() => d.after6MonthsPhotoUrl ? setFullScreenImage({ url: d.after6MonthsPhotoUrl, type: 'after6MonthsPhotoUrl' }) : handlePhotoUpload('after6MonthsPhotoUrl')}
-                className="aspect-[3/4] bg-indigo-500/5 border border-slate-800 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/20 transition-colors"
-              >
-                {d.after6MonthsPhotoUrl ? (
-                  <>
-                    <img src={d.after6MonthsPhotoUrl} alt="6 Months" className="w-full h-full object-cover" />
-                    <div className="absolute bottom-3 right-3 bg-indigo-500/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? '6 Bulan' : '6 Months'}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/20">
-                       <ImageIcon className="w-8 h-8 mb-3 opacity-40 group-hover:scale-110 transition-transform text-indigo-300" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">{lang === 'id' ? '6 Bulan' : '6 Months'}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div 
-                onClick={() => d.after1YearPhotoUrl ? setFullScreenImage({ url: d.after1YearPhotoUrl, type: 'after1YearPhotoUrl' }) : handlePhotoUpload('after1YearPhotoUrl')}
-                className="aspect-[3/4] bg-indigo-500/5 border border-slate-800 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:border-indigo-500/20 transition-colors"
-              >
-                {d.after1YearPhotoUrl ? (
-                  <>
-                    <img src={d.after1YearPhotoUrl} alt="1 Year" className="w-full h-full object-cover" />
-                    <div className="absolute bottom-3 right-3 bg-indigo-500/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">{lang === 'id' ? '1 Tahun' : '1 Year'}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-500/20">
-                       <ImageIcon className="w-8 h-8 mb-3 opacity-40 group-hover:scale-110 transition-transform text-indigo-300" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">{lang === 'id' ? '1 Tahun' : '1 Year'}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-        
-        {!showAllPhotos && (
-           <button 
-             onClick={() => setShowAllPhotos(true)}
-             className="w-full mt-4 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors"
-           >
-             {lang === 'id' ? 'Lihat Selengkapnya' : 'View More'}
-           </button>
         )}
       </div>
 
-      {/* 7. Complete Mission Button */}
-      <div className="pt-8">
-        <h3 className="text-[11px] text-center font-bold text-slate-400 uppercase tracking-widest mb-4">
-          {lang === 'id' ? 'Tamatkan Fokus Disiplin Ini Secara Final' : 'Permanently Complete This Focus'}
-        </h3>
-        <div className="flex flex-col gap-3">
-          <button 
-            onClick={() => {
-              updateTask({ ...task, completed: !task.completed });
-            }}
-            className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${
-              task.completed 
-                ? 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 border border-slate-800' 
-                : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 active:scale-95'
-            }`}
-          >
-            <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${task.completed ? 'bg-slate-700 border-slate-600' : 'bg-slate-800/30 border-slate-600'}`}>
-              {task.completed && <CheckSquare className="w-4 h-4 text-slate-400" />}
-            </div>
-            {task.completed 
-              ? (lang === 'id' ? 'Batalkan Status Tamat' : 'Revert Final Status') 
-              : (lang === 'id' ? 'Tamatkan Misi Utama (Final)' : 'Complete Main Mission (Final)')}
-          </button>
-
-          {task.completed && (
-             <button
-                onClick={() => {
-                  updateTask({ ...task, isArchived: true });
-                }}
-                className="w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 shadow-lg shadow-emerald-900/10 active:scale-95 mt-2"
-             >
-                <Plus className="w-5 h-5" />
-                {lang === 'id' ? 'Mulai Target Fokus Baru' : 'Start New Focus Target'}
-             </button>
-          )}
-        </div>
-      </div>
-      
-      {/* Full Screen Image Modal */}
       {fullScreenImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setFullScreenImage(null)}
-        >
-          <div className="absolute top-0 inset-x-0 p-6 flex justify-end z-10 bg-gradient-to-b from-black/80 to-transparent">
-            <button 
-              className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white"
-              onClick={(e) => { e.stopPropagation(); setFullScreenImage(null); }}
-            >
-              <X className="w-6 h-6" />
-            </button>
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-lg flex justify-between items-center mb-4">
+             <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+                {lang === 'id' ? 'Galeri Transformasi' : 'Transformation Gallery'}
+             </span>
+             <button onClick={() => setFullScreenImage(null)} className="p-2 bg-slate-800/80 text-slate-300 rounded-full hover:bg-slate-700">
+               <X className="w-5 h-5" />
+             </button>
           </div>
-
-          <img 
-            src={fullScreenImage.url} 
-            alt="Full Screen" 
-            className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl relative z-0" 
-            onClick={(e) => e.stopPropagation()}
-          />
-
-          <div className="absolute bottom-0 inset-x-0 p-6 flex justify-center gap-4 z-10 bg-gradient-to-t from-black/80 to-transparent">
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                handlePhotoUpload(fullScreenImage.type);
-                setFullScreenImage(null);
-              }}
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-2xl font-bold text-white flex items-center gap-2 backdrop-blur-md transition-colors"
-            >
-              <Camera className="w-5 h-5" />
-              {lang === 'id' ? 'Ganti' : 'Change'}
-            </button>
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                handleRemovePhoto(e, fullScreenImage.type);
-                setFullScreenImage(null);
-              }}
-              className="px-6 py-3 bg-rose-500/20 hover:bg-rose-500/30 rounded-2xl font-bold text-rose-300 flex items-center gap-2 backdrop-blur-md transition-colors"
-            >
-              <Trash2 className="w-5 h-5" />
-              {lang === 'id' ? 'Hapus' : 'Delete'}
-            </button>
-          </div>
+          <img src={fullScreenImage.url} alt="Transformation Full" className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl" />
+          <button 
+             onClick={(e) => { 
+               e.stopPropagation();
+               setFullScreenImage(null); 
+               handleRemovePhoto(e, fullScreenImage.type); 
+             }}
+             className="mt-6 flex items-center gap-2 bg-rose-500/10 text-rose-400 px-6 py-3 rounded-2xl font-bold hover:bg-rose-500/20 transition-colors"
+          >
+             <Trash2 className="w-4 h-4" />
+             {lang === 'id' ? 'Hapus Foto Ini' : 'Remove This Photo'}
+          </button>
         </div>
       )}
-
     </div>
   );
 });

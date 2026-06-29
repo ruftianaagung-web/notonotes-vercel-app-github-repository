@@ -113,7 +113,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   const { pinnedNotes, pinnedTasks, disciplineTask, todayTasks, activeTasksCount, totalTodayCount, progressPercent } = useMemo(() => {
     const pNotes = (notes || []).filter(n => n && n.pinned && !n.isArchived);
     const pTasks = (tasks || []).filter(t => t && t.pinned && !t.isDiscipline);
-    const dTask = (tasks || []).find(t => t && t.isDiscipline);
+    const dTask = (tasks || []).find(t => t && t.isDiscipline && !t.completed);
 
     const isToday = (t: any) => t?.date === todayStr || t?.date === 'Hari ini' || t?.date === 'Hari Ini' || t?.repeat === 'daily';
     

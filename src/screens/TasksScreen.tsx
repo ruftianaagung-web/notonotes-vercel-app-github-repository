@@ -114,10 +114,10 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
         return t.date;
     };
 
-    let filtered = [...(tasks || [])].filter(t => t !== null && t !== undefined && !t.isDiscipline);
+    let filtered = [...(tasks || [])].filter(t => t !== null && t !== undefined);
     
     // For Biasa view, we only partition tasks
-    const uncompleted = filtered.filter(t => !t.completed);
+    const uncompleted = filtered.filter(t => !t.completed && !t.isDiscipline);
     const completed = filtered.filter(t => t.completed);
 
     const isTodayTask = (t: any) => getTaskDateStr(t) === todayStr || t?.repeat === 'daily';
@@ -136,12 +136,18 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
     const upcomingTasks = uncompleted.filter(isUpcomingTask);
     const noDateTasks = uncompleted.filter(isNoDateTask);
 
-    const disciplineTask = tasks.find(t => t.isDiscipline);
+    const disciplineTask = tasks.find(t => t.isDiscipline && !t.completed);
 
     return { todayTasks, overdueTasks, upcomingTasks, noDateTasks, completedTasks: completed, disciplineTask, filteredTasks: uncompleted };
   }, [tasks]);
 
-  const handleSelectExisting = useCallback(() => { setNewTaskIsDiscipline(true); setIsAddingTask(true); }, []);
+  const handleSelectExisting = useCallback(() => { 
+    setNewTaskIsDiscipline(true); 
+    setNewTaskPriority('Tinggi');
+    setNewTaskRepeat('daily');
+    setNewTaskDate(new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]);
+    setIsAddingTask(true); 
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 font-sans text-slate-200">
@@ -281,7 +287,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
       </div>
 
       {/* FAB Add */}
-      {!isAddingTask && (
+      {!isAddingTask && activeTab !== 'Disiplin' && (
         <button onClick={() => { setNewTaskIsDiscipline(false); setIsAddingTask(true); }} className="absolute bottom-8 right-6 w-16 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-indigo-600/30 transition-transform active:scale-95 z-50">
           <Plus className="w-7 h-7 stroke-[2.5]" />
         </button>
@@ -308,6 +314,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                  
                  <div className="space-y-4 mb-6">
                    {/* Priority */}
+                   {!newTaskIsDiscipline && (
                    <div>
                      <span className="text-[10px] text-slate-400 font-medium mb-1.5 ml-1 block">{lang === 'id' ? 'Prioritas' : 'Priority'}</span>
                      <div className="flex gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800/50">
@@ -329,9 +336,11 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                        )})}
                      </div>
                    </div>
+                   )}
 
                    {/* Date & Time */}
                    <div className="flex gap-3">
+                     {!newTaskIsDiscipline && (
                      <div className="flex-1">
                        <span className="text-[10px] text-slate-400 font-medium mb-1.5 ml-1 block">{lang === 'id' ? 'Tanggal' : 'Date'}</span>
                        <input
@@ -342,6 +351,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                          
                        />
                      </div>
+                     )}
                      <div className="flex-1">
                        <span className="text-[10px] text-slate-400 font-medium mb-1.5 ml-1 flex items-center gap-1">
                          <Bell className="w-3 h-3 text-indigo-400" />
@@ -369,6 +379,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                    </div>
 
                    {/* Repeat */}
+                   {!newTaskIsDiscipline && (
                    <div>
                      <span className="text-[10px] text-slate-400 font-medium mb-1.5 ml-1 block">{lang === 'id' ? 'Perulangan' : 'Repeat'}</span>
                      <div className="flex gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800/50">
@@ -389,21 +400,17 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
                        </button>
                      </div>
                    </div>
+                   )}
 
-                   {/* Discipline Toggle */}
-                   <div className="flex items-center justify-between p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-xl mt-4">
-                     <div className="flex flex-col">
-                       <span className="text-sm font-bold text-indigo-400">{lang === 'id' ? '🔥 Fokus Disiplin' : '🔥 Discipline Focus'}</span>
-                       <span className="text-[10px] text-slate-400">{lang === 'id' ? 'Jadikan sebagai target utama (hanya bisa 1 tugas)' : 'Make this main target (only 1 task allowed)'}</span>
+                   {/* Discipline Indicator */}
+                   {newTaskIsDiscipline && (
+                     <div className="flex items-center justify-between p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mt-4">
+                       <div className="flex flex-col">
+                         <span className="text-sm font-bold text-indigo-400">{lang === 'id' ? '🔥 Fokus Disiplin' : '🔥 Discipline Focus'}</span>
+                         <span className="text-[10px] text-slate-400">{lang === 'id' ? 'Tugas ini akan disetel sebagai target utama Anda.' : 'This task will be set as your main target.'}</span>
+                       </div>
                      </div>
-                     <button
-                        type="button"
-                        onClick={() => setNewTaskIsDiscipline(!newTaskIsDiscipline)}
-                        className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors ${newTaskIsDiscipline ? 'bg-indigo-500' : 'bg-slate-700'}`}
-                     >
-                       <div className={`w-4 h-4 rounded-full bg-white transition-transform ${newTaskIsDiscipline ? 'translate-x-6' : 'translate-x-0'}`} />
-                     </button>
-                   </div>
+                   )}
                  </div>
 
                  <button type="submit" className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">{t('save')}</button>
@@ -418,7 +425,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
 const TaskCard = React.memo<{ task: Task, last?: boolean, onToggle: (id: string) => void, onEdit: (task: Task) => void }>(({ task, last, onToggle, onEdit }) => {
   const isHigh = task.priority === 'Tinggi';
   const isMed = task.priority === 'Sedang';
-  const { deleteTask, lang } = useAppStore();
+  const { updateTask, deleteTask, lang } = useAppStore();
   const t = useTranslation(lang);
 
   let dailyStats = null;
@@ -486,18 +493,26 @@ const TaskCard = React.memo<{ task: Task, last?: boolean, onToggle: (id: string)
             </div>
          )}
       </div>
-      <button 
-        onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} 
-        className="opacity-100 p-4 -mr-2 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center"
-      >
-         <Trash2 className="w-5 h-5" />
-      </button>
+      <div className="flex gap-1 flex-shrink-0">
+        <button 
+          onClick={(e) => { e.stopPropagation(); updateTask({ ...task, pinned: !task.pinned }); }} 
+          className="p-3 text-slate-400 hover:text-orange-400 transition-colors flex items-center justify-center"
+        >
+           <Pin className={`w-5 h-5 ${task.pinned ? 'fill-orange-400 text-orange-400' : ''}`} />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} 
+          className="p-3 -mr-2 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center"
+        >
+           <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 });
 
 const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, lang: string }>(({ task, onSelectExisting, lang }) => {
-  const { updateTask, checkInDaily } = useAppStore();
+  const { updateTask, checkInDaily, deleteTask } = useAppStore();
   const [fullScreenImage, setFullScreenImage] = useState<{ url: string, type: 'beforePhotoUrl' | 'afterPhotoUrl' | 'after1MonthPhotoUrl' | 'after6MonthsPhotoUrl' | 'after1YearPhotoUrl' } | null>(null);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [activeTab, setActiveTab] = useState<'Aksi' | 'Jurnal' | 'Galeri'>('Aksi');
@@ -578,10 +593,23 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
   
   let daysLeftText = lang === 'id' ? 'Tanpa target' : 'No target';
   let totalTargetDays = 0;
+  let isTargetReached = task.completed;
   if (d.targetDate) {
-    const daysLeft = Math.max(0, Math.floor((parseDate(d.targetDate) - parseDate(today)) / 86400000));
-    daysLeftText = `${daysLeft} ${lang === 'id' ? 'hari' : 'days'}`;
-    totalTargetDays = Math.max(daysDone + daysMissed + daysLeft, Math.floor((parseDate(d.targetDate) - parseDate(d.startDate || task.date)) / 86400000) + 1);
+    const targetMs = parseDate(d.targetDate);
+    const todayMs = parseDate(today);
+    const daysLeft = Math.max(0, Math.floor((targetMs - todayMs) / 86400000));
+    
+    if (todayMs >= targetMs) {
+      isTargetReached = true;
+    }
+    
+    if (isTargetReached) {
+      daysLeftText = lang === 'id' ? 'Selesai' : 'Completed';
+    } else {
+      daysLeftText = `${daysLeft} ${lang === 'id' ? 'hari' : 'days'}`;
+    }
+    
+    totalTargetDays = Math.max(daysDone + daysMissed + daysLeft, Math.floor((targetMs - parseDate(d.startDate || task.date)) / 86400000) + 1);
   }
 
   return (
@@ -602,15 +630,35 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
               </span>
             )}
           </div>
-          <div className="flex justify-between items-start gap-4 mb-5">
+          <div className="flex flex-col md:flex-row md:justify-between items-start gap-4 mb-5">
             <h2 className="text-2xl font-bold text-slate-50 pr-4 leading-tight tracking-tight">{task.title}</h2>
-            <button
-              onClick={() => updateTask({ ...task, pinned: !task.pinned })}
-              className={`p-2 rounded-full border transition-all ${task.pinned ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-800/80 border-slate-800 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30'}`}
-              title={lang === 'id' ? 'Sematkan di Beranda' : 'Pin to Home'}
-            >
-              <Pin className={`w-5 h-5 ${task.pinned ? 'fill-indigo-400' : ''}`} />
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => updateTask({ ...task, pinned: !task.pinned })}
+                className={`p-2 rounded-xl border transition-all ${task.pinned ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-800/80 border-slate-800 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30'}`}
+                title={lang === 'id' ? 'Sematkan di Beranda' : 'Pin to Home'}
+              >
+                <Pin className={`w-5 h-5 ${task.pinned ? 'fill-indigo-400' : ''}`} />
+              </button>
+              {!task.completed && (
+                <button
+                  onClick={() => updateTask({ ...task, completed: true })}
+                  className="px-3 py-2 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 text-xs font-bold"
+                  title={lang === 'id' ? 'Selesaikan Fokus' : 'Finish Focus'}
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span>{lang === 'id' ? 'Selesai' : 'Done'}</span>
+                </button>
+              )}
+              <button
+                onClick={() => deleteTask(task.id)}
+                className="px-3 py-2 rounded-xl border bg-slate-800/80 border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center gap-1.5 text-xs font-bold"
+                title={lang === 'id' ? 'Hapus' : 'Delete'}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{lang === 'id' ? 'Hapus' : 'Delete'}</span>
+              </button>
+            </div>
           </div>
           
           {/* Progress Stats */}
@@ -669,56 +717,74 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
                  <Flame className="w-32 h-32 text-orange-500" />
               </div>
               <div className="flex flex-col gap-3 relative z-10">
-                <button
-                  onClick={() => {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const checkinsArr = d.dailyCheckins || [];
-                    if (!checkinsArr.includes(todayStr)) {
-                      updateTask({ ...task, disciplineData: { ...d, dailyCheckins: [...checkinsArr, todayStr] } });
-                      checkInDaily();
-                    }
-                  }}
-                  disabled={d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])}
-                  className={`w-full px-5 py-4 rounded-2xl font-bold text-sm transition-all ${
-                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])
-                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-800'
-                      : 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95'
-                  }`}
-                >
-                  {d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) 
-                    ? (lang === 'id' ? 'Selesai Hari Ini' : 'Done Today') 
-                    : (lang === 'id' ? 'Check-in Sekarang' : 'Check-in Now')}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const checkinsArr = d.dailyCheckins || [];
-                    const rests = d.usedRestDates || [];
-                    if (!checkinsArr.includes(todayStr)) {
-                      updateTask({ 
-                        ...task, 
-                        disciplineData: { 
-                          ...d, 
-                          dailyCheckins: [...checkinsArr, todayStr],
-                          usedRestDates: [...rests, todayStr]
-                        } 
-                      });
-                      checkInDaily();
-                    }
-                  }}
-                  disabled={
-                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || 
-                    ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
-                  }
-                  className={`w-full px-5 py-3 rounded-2xl font-bold text-sm transition-all border ${
-                    d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
-                      ? 'bg-slate-900/50 text-slate-500 border-slate-800 cursor-not-allowed'
-                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 border-slate-700 active:scale-95'
-                  }`}
-                >
-                  {lang === 'id' ? 'Gunakan Jatah Libur (1x/Minggu)' : 'Use Rest Day (1x/Week)'}
-                </button>
+                {isTargetReached ? (
+                  <div className="flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mb-4">
+                      <CheckSquare className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-emerald-400 mb-2">
+                      {lang === 'id' ? 'Misi Telah Selesai!' : 'Mission Completed!'}
+                    </h3>
+                    <p className="text-sm text-slate-400 max-w-[240px]">
+                      {lang === 'id' 
+                        ? 'Luar biasa! Kamu telah mencapai target disiplin yang ditentukan.' 
+                        : 'Awesome! You have reached your discipline goal.'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const checkinsArr = d.dailyCheckins || [];
+                        if (!checkinsArr.includes(todayStr)) {
+                          updateTask({ ...task, disciplineData: { ...d, dailyCheckins: [...checkinsArr, todayStr] } });
+                          checkInDaily();
+                        }
+                      }}
+                      disabled={d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])}
+                      className={`w-full px-5 py-4 rounded-2xl font-bold text-sm transition-all ${
+                        d.dailyCheckins?.includes(new Date().toISOString().split('T')[0])
+                          ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-800'
+                          : 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 active:scale-95'
+                      }`}
+                    >
+                      {d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) 
+                        ? (lang === 'id' ? 'Selesai Hari Ini' : 'Done Today') 
+                        : (lang === 'id' ? 'Check-in Sekarang' : 'Check-in Now')}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const checkinsArr = d.dailyCheckins || [];
+                        const rests = d.usedRestDates || [];
+                        if (!checkinsArr.includes(todayStr)) {
+                          updateTask({ 
+                            ...task, 
+                            disciplineData: { 
+                              ...d, 
+                              dailyCheckins: [...checkinsArr, todayStr],
+                              usedRestDates: [...rests, todayStr]
+                            } 
+                          });
+                          checkInDaily();
+                        }
+                      }}
+                      disabled={
+                        d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || 
+                        ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
+                      }
+                      className={`w-full px-5 py-3 rounded-2xl font-bold text-sm transition-all border ${
+                        d.dailyCheckins?.includes(new Date().toISOString().split('T')[0]) || ((d.usedRestDates || []).filter(date => (new Date().getTime() - new Date(date).getTime()) < 7 * 24 * 60 * 60 * 1000).length >= 1)
+                          ? 'bg-slate-900/50 text-slate-500 border-slate-800 cursor-not-allowed'
+                          : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 border-slate-700 active:scale-95'
+                      }`}
+                    >
+                      {lang === 'id' ? 'Gunakan Jatah Libur (1x/Minggu)' : 'Use Rest Day (1x/Week)'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             
@@ -772,7 +838,7 @@ const DisciplineView = React.memo<{ task?: Task, onSelectExisting: () => void, l
             
             <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 flex items-center justify-between">
                <div className="flex flex-col">
-                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 block">{lang === 'id' ? 'Alarm Pengingat' : 'Reminder Alarm'}</span>
+                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 block">{lang === 'id' ? 'Notifikasi Pengingat' : 'Reminder Notification'}</span>
                  <span className="text-[10px] text-slate-400">{lang === 'id' ? 'Aktif setiap hari' : 'Active every day'}</span>
                </div>
                <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-xl border border-slate-800">

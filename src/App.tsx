@@ -75,7 +75,48 @@ export default function App() {
   const [inAppAlarm, setInAppAlarm] = useState<{id: number, title: string, body: string, isAlarm?: boolean} | null>(null);
 
   useEffect(() => {
-    // We remove the return block here since we still might want to trigger individual task alarms
+    // Schedule future notifications if supported by the browser (Experimental Web API)
+    if ('serviceWorker' in navigator && 'showTrigger' in Notification.prototype && Notification.permission === 'granted') {
+      navigator.serviceWorker.ready.then(async (reg) => {
+        try {
+          // Attempt to schedule notifications for the next 24 hours
+          const now = new Date();
+          const todayDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+          
+          tasks.forEach(task => {
+            if (task.completed || !task.alarmTime) return;
+            
+            let isToday = false;
+            if (task.date === 'Hari ini' || (task.date && task.date.toLowerCase() === 'today') || task.date === todayDate || task.repeat === 'daily' || task.isDiscipline) {
+              isToday = true;
+            }
+
+            if (isToday) {
+              const [alarmHour, alarmMinute] = task.alarmTime.split(':').map(Number);
+              const targetTime = new Date();
+              targetTime.setHours(alarmHour, alarmMinute, 0, 0);
+              
+              if (targetTime.getTime() > now.getTime() && targetTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+                const message = lang === 'id' ? `Ayo lakukan tugas "${task.title}" kamu!` : `Time to do your task: "${task.title}"!`;
+                // @ts-ignore
+                reg.showNotification(lang === 'id' ? "Waktunya Tugas!" : "Task Due!", {
+                  tag: `noto_task_${task.id}_${todayDate}`,
+                  body: message,
+                  icon: '/icon.png',
+                  badge: '/icon.png',
+                  // @ts-ignore
+                  showTrigger: new TimestampTrigger(targetTime.getTime())
+                }).catch(() => {});
+              }
+            }
+          });
+        } catch(e) {}
+      });
+    }
+  }, [tasks, lang]);
+
+  useEffect(() => {
+    // We remove the return block here since we still might want to trigger individual task notifications
     const interval = setInterval(() => {
       const now = new Date();
       const currentHour = now.getHours().toString().padStart(2, '0');
@@ -86,45 +127,41 @@ export default function App() {
       const todayDate = localDate.toISOString().split('T')[0];
       const lastNotif = localStorage.getItem('noto_last_notif_date_time');
       
-      const sendNotification = (title: string, body: string, isAlarm: boolean = false) => {
+      const sendNotification = (title: string, body: string, isImportant: boolean = false) => {
         const id = Date.now();
         const isVisible = document.visibilityState === 'visible';
         
-        // Selalu tampilkan In-App Alarm agar saat dibuka ada modalnya
-        setInAppAlarm({title, body, id, isAlarm});
-        if (!isAlarm) {
+        // Selalu tampilkan In-App Notification agar saat dibuka ada modalnya
+        setInAppAlarm({title, body, id, isAlarm: isImportant});
+        if (!isImportant) {
           setTimeout(() => setInAppAlarm(prev => prev && prev.id === id ? null : prev), 10000);
         }
 
         if (isVisible) {
-          // App terbuka: Bunyikan suara Alarm kencang + Vibrate
+          // App terbuka: Bunyikan suara notifikasi + Vibrate
           stopGlobalAudio();
           
           if ("vibrate" in navigator) {
-            try { navigator.vibrate(isAlarm ? [500, 500, 500, 500, 500, 500, 500, 500, 500] : [500, 250, 500]); } catch(e) {}
+            try { navigator.vibrate([200, 100, 200]); } catch(e) {}
           }
           
           try {
              activeAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
              const playBeep = () => {
-               if(!activeAudioCtx) return;
+               if (!activeAudioCtx) return;
                const osc = activeAudioCtx.createOscillator();
                const gain = activeAudioCtx.createGain();
                osc.connect(gain);
                gain.connect(activeAudioCtx.destination);
                osc.type = 'sine';
-               osc.frequency.setValueAtTime(isAlarm ? 900 : 880, activeAudioCtx.currentTime);
+               osc.frequency.setValueAtTime(isImportant ? 880 : 660, activeAudioCtx.currentTime);
                osc.frequency.exponentialRampToValueAtTime(440, activeAudioCtx.currentTime + 0.1);
-               gain.gain.setValueAtTime(isAlarm ? 0.8 : 0.5, activeAudioCtx.currentTime);
+               gain.gain.setValueAtTime(0.5, activeAudioCtx.currentTime);
                gain.gain.exponentialRampToValueAtTime(0.01, activeAudioCtx.currentTime + 0.5);
                osc.start(activeAudioCtx.currentTime);
                osc.stop(activeAudioCtx.currentTime + 0.5);
              };
              playBeep();
-             if (isAlarm) {
-               activeInterval = setInterval(playBeep, 1000);
-               setTimeout(stopGlobalAudio, 120000); // auto stop after 2 mins
-             }
           } catch(e) {}
 
         } else {
@@ -134,8 +171,8 @@ export default function App() {
               body: body, 
               icon: '/icon.png', 
               badge: '/icon.png',
-              vibrate: isAlarm ? [500, 500, 500, 500, 500, 500, 500, 500, 500] : [500, 250, 500],
-              requireInteraction: isAlarm,
+              vibrate: [200, 100, 200],
+              requireInteraction: isImportant,
               silent: false
             };
             
@@ -179,9 +216,9 @@ export default function App() {
         sendNotification(title, body, false);
       }
 
-      // 2. Individual Task Alarms
+      // 2. Individual Task Notifications
       tasks.forEach(task => {
-        // Skip completed tasks or tasks with no alarm
+        // Skip completed tasks or tasks with no notification time
         if (task.completed || !task.alarmTime) return;
 
         // Check if the task is scheduled for today
@@ -262,7 +299,7 @@ export default function App() {
              <h3 className="text-2xl font-bold text-slate-50 mb-2">{inAppAlarm.title}</h3>
              <p className="text-slate-400 font-medium mb-8">{inAppAlarm.body}</p>
              <button onClick={() => { setInAppAlarm(null); stopGlobalAudio(); }} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg transition-transform active:scale-95 shadow-lg shadow-indigo-600/20">
-               {lang === 'id' ? 'Tutup Pengingat' : 'Dismiss Alarm'}
+               {lang === 'id' ? 'Tutup Notifikasi' : 'Dismiss Notification'}
              </button>
            </div>
         </div>

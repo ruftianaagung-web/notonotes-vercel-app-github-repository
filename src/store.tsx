@@ -361,15 +361,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearAllData = () => {
-    localStorage.setItem('noto_user', JSON.stringify({ name: 'Pengguna', avatarUrl: '' }));
-    localStorage.setItem('noto_notes', '[]');
-    localStorage.setItem('noto_tasks', '[]');
-    localStorage.setItem('noto_transactions', '[]');
-    localStorage.setItem('noto_moods', '[]');
-    localStorage.setItem('noto_streak', '0');
-    localStorage.removeItem('noto_last_task_completed');
-    localStorage.removeItem('noto_pin');
-    localStorage.removeItem('noto_onboarding_completed');
+    // Securely wipe all data from local storage by overwriting with null bytes before removing
+    const keys = ['noto_user', 'noto_notes', 'noto_tasks', 'noto_transactions', 'noto_moods', 'noto_streak', 'noto_last_task_completed', 'noto_pin', 'noto_onboarding_completed', 'noto_archived_tags'];
+    keys.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) {
+        localStorage.setItem(key, '0'.repeat(val.length || 1000));
+        localStorage.removeItem(key);
+      }
+    });
+
     setNotes([]);
     setTasks([]);
     setTransactions([]);

@@ -18,21 +18,18 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showUpdateNotes, setShowUpdateNotes] = useState(false);
+  const [backupModalMode, setBackupModalMode] = useState<'export' | 'import' | null>(null);
+  const [backupPassword, setBackupPassword] = useState('');
+  const [backupFileContent, setBackupFileContent] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState(false);
 
-  const handleExport = () => {
-    const data = JSON.stringify({ notes, tasks, transactions });
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'noto_backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    setToastMessage(t('toastExportSuccess'));
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleExportClick = () => {
+    setBackupPassword('');
+    setBackupError(false);
+    setBackupModalMode('export');
   };
 
-  const handleImport = () => {
+  const handleImportClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
@@ -41,47 +38,102 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
       if (file) {
         const reader = new FileReader();
         reader.onload = (ev) => {
-          try {
-            const data = JSON.parse(ev.target?.result as string);
-            if (data.notes && data.tasks) {
-              const parsedTransactions = data.transactions || [];
-              const seenTxIds = new Set();
-              const uniqueTransactions = parsedTransactions.map((t: any) => {
-                if (seenTxIds.has(t.id)) t.id = crypto.randomUUID();
-                seenTxIds.add(t.id);
-                return t;
-              });
-
-              const seenTaskIds = new Set();
-              const uniqueTasks = data.tasks.map((t: any) => {
-                if (seenTaskIds.has(t.id)) t.id = crypto.randomUUID();
-                seenTaskIds.add(t.id);
-                return t;
-              });
-
-              const seenNoteIds = new Set();
-              const uniqueNotes = data.notes.map((n: any) => {
-                if (seenNoteIds.has(n.id)) n.id = crypto.randomUUID();
-                seenNoteIds.add(n.id);
-                return n;
-              });
-              
-              importData(uniqueNotes, uniqueTasks, uniqueTransactions);
-              setToastMessage(t('toastImportSuccess'));
-              setTimeout(() => setToastMessage(null), 3000);
-            } else {
-              setToastMessage(t('toastImportInvalid'));
-              setTimeout(() => setToastMessage(null), 3000);
-            }
-          } catch(e) {
-            setToastMessage(t('toastImportCorrupt'));
-            setTimeout(() => setToastMessage(null), 3000);
-          }
+          setBackupFileContent(ev.target?.result as string);
+          setBackupPassword('');
+          setBackupError(false);
+          setBackupModalMode('import');
         };
         reader.readAsText(file);
       }
     };
     input.click();
+  };
+
+  const processExport = async () => {
+    try {
+      const data = JSON.stringify({ notes, tasks, transactions });
+      let finalData = data;
+      
+      if (backupPassword) {
+        const { encryptData } = await import('../utils');
+        finalData = await encryptData(data, backupPassword);
+      }
+      
+      const blob = new Blob([finalData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'noto_backup.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      setToastMessage(t('toastExportSuccess'));
+      setBackupModalMode(null);
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (e) {
+      setBackupError(true);
+      setTimeout(() => setBackupError(false), 2000);
+    }
+  };
+
+  const processImport = async () => {
+    if (!backupFileContent) return;
+    try {
+      let dataStr = backupFileContent;
+      
+      try {
+        const parsed = JSON.parse(backupFileContent);
+        if (parsed.v && parsed.s && parsed.d) {
+          if (!backupPassword) {
+            setBackupError(true);
+            setTimeout(() => setBackupError(false), 2000);
+            return;
+          }
+          const { decryptData } = await import('../utils');
+          dataStr = await decryptData(backupFileContent, backupPassword);
+        }
+      } catch (e) {
+        setBackupError(true);
+        setTimeout(() => setBackupError(false), 2000);
+        return;
+      }
+      
+      const data = JSON.parse(dataStr);
+      if (data.notes && data.tasks) {
+        const parsedTransactions = data.transactions || [];
+        const seenTxIds = new Set();
+        const uniqueTransactions = parsedTransactions.map((t: any) => {
+          if (seenTxIds.has(t.id)) t.id = crypto.randomUUID();
+          seenTxIds.add(t.id);
+          return t;
+        });
+
+        const seenTaskIds = new Set();
+        const uniqueTasks = data.tasks.map((t: any) => {
+          if (seenTaskIds.has(t.id)) t.id = crypto.randomUUID();
+          seenTaskIds.add(t.id);
+          return t;
+        });
+
+        const seenNoteIds = new Set();
+        const uniqueNotes = data.notes.map((n: any) => {
+          if (seenNoteIds.has(n.id)) n.id = crypto.randomUUID();
+          seenNoteIds.add(n.id);
+          return n;
+        });
+        
+        importData(uniqueNotes, uniqueTasks, uniqueTransactions);
+        setToastMessage(t('toastImportSuccess'));
+        setBackupModalMode(null);
+        setTimeout(() => setToastMessage(null), 3000);
+      } else {
+        setToastMessage(t('toastImportInvalid'));
+        setBackupModalMode(null);
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch(e) {
+      setBackupError(true);
+      setTimeout(() => setBackupError(false), 2000);
+    }
   };
 
   return (
@@ -201,19 +253,19 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
         <section>
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2"><FileText size={16} className="text-emerald-400" /> {t('dataBackup')}</h3>
           <div className="bg-slate-800/40 border border-slate-800/60 rounded-3xl flex flex-col overflow-hidden">
-            <button onClick={handleExport} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 text-left">
+            <button onClick={handleExportClick} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors border-b border-slate-800/60 text-left">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shadow-inner border border-emerald-500/20">
                   <Download size={18} />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-[15px] text-slate-200">{t('backupExport')}</span>
-                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">Simpan data ke perangkat</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">Simpan data ke perangkat dengan aman</span>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-600" />
             </button>
-            <button onClick={handleImport} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors text-left">
+            <button onClick={handleImportClick} className="flex items-center justify-between p-4 hover:bg-slate-800/60 transition-colors text-left">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center shadow-inner border border-sky-500/20">
                   <Upload size={18} />
@@ -515,6 +567,53 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                   className="px-4 py-2 rounded-xl text-white text-sm font-bold bg-red-500 hover:bg-red-600 transition-colors"
                 >
                   {t('yesReset')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {backupModalMode && (
+          <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-4 md:p-4 z-50">
+            <div className={`bg-slate-900 border border-slate-800 p-4 md:p-4 rounded-3xl w-full max-w-sm ${backupError ? 'animate-pulse border-red-500/50' : ''}`}>
+              <h3 className="text-lg font-bold text-slate-50 mb-2">
+                {backupModalMode === 'export' ? 'Password Enkripsi' : 'Masukkan Password'}
+              </h3>
+              <p className="text-sm text-slate-400 mb-4">
+                {backupModalMode === 'export' 
+                  ? 'Masukkan password untuk mengamankan data cadangan ini (opsional tapi disarankan).' 
+                  : 'Jika file cadangan ini dienkripsi, masukkan password untuk membukanya.'}
+              </p>
+              <input
+                type="password"
+                value={backupPassword}
+                onChange={e => setBackupPassword(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    if (backupModalMode === 'export') processExport();
+                    else processImport();
+                  }
+                }}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-50 text-center mb-4 outline-none focus:border-indigo-500 transition-colors"
+                placeholder="Password"
+              />
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setBackupModalMode(null);
+                    setBackupPassword('');
+                    setBackupFileContent(null);
+                    setBackupError(false);
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-50 transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+                <button 
+                  onClick={backupModalMode === 'export' ? processExport : processImport}
+                  className="px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors bg-indigo-500 hover:bg-indigo-600"
+                >
+                  {backupModalMode === 'export' ? (backupPassword ? 'Enkripsi & Ekspor' : 'Ekspor Tanpa Enkripsi') : 'Impor'}
                 </button>
               </div>
             </div>

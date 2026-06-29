@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 export default function CalendarScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { tasks, moods, lang, streak } = useAppStore();
+  const { tasks, moods, lang, streak, setMood } = useAppStore();
   const t = useTranslation(lang);
 
   const locale = lang === 'en' ? 'en-US' : 'id-ID';
@@ -135,6 +135,7 @@ export default function CalendarScreen() {
     const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
 
     const sTasks = tasks.filter(t => {
+       if (t.isDiscipline) return false;
        const tDateStr = getTaskDateStr(t.date);
        if (!tDateStr || !tDateStr.includes('-')) return false;
        
@@ -388,36 +389,75 @@ export default function CalendarScreen() {
 
                 {/* Selected Tasks List (Harian view) */}
                 {viewType === 'Harian' && (
-                  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 mt-6">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
-                       {lang === 'id' ? 'Tugas pada tanggal ini' : 'Tasks on this date'}
-                    </h3>
-                    {selectedTasks.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedTasks.map(task => (
-                           <div key={task.id} className="flex items-center gap-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                             <div className={`w-3.5 h-3.5 rounded-full border-2 ${task.completed || (task.completedDates && task.completedDates.includes(selectedDateStr)) ? 'bg-emerald-500 border-emerald-500' : 'bg-transparent border-slate-600'}`}></div>
-                             <span className={`text-sm font-medium ${task.completed || (task.completedDates && task.completedDates.includes(selectedDateStr)) ? 'text-slate-400 line-through' : 'text-slate-200'}`}>{task.title}</span>
-                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-400 text-sm">
-                        {t('emptyCalendar') || 'Tidak ada tugas atau catatan di tanggal ini.'}
+                  <>
+                    {selectedDateStr <= todayStr && (
+                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 mt-6">
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                          {lang === 'id' ? 'Mood pada tanggal ini' : 'Mood on this date'}
+                        </h3>
+                        <div className="flex justify-between items-center bg-slate-950 p-2 md:p-3 rounded-3xl border border-slate-800 overflow-x-auto gap-2">
+                          {[
+                            { id: 'excellent', label: 'Sangat Baik', labelEn: 'Excellent', colors: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20', activeColors: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' },
+                            { id: 'good', label: 'Baik', labelEn: 'Good', colors: 'bg-teal-500/10 text-teal-400 border-teal-500/30 hover:bg-teal-500/20', activeColors: 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-500/20' },
+                            { id: 'neutral', label: 'Biasa', labelEn: 'Neutral', colors: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20', activeColors: 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' },
+                            { id: 'bad', label: 'Buruk', labelEn: 'Bad', colors: 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20', activeColors: 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' },
+                            { id: 'terrible', label: 'Sangat Buruk', labelEn: 'Terrible', colors: 'bg-rose-500/10 text-rose-500 border-rose-500/30 hover:bg-rose-500/20', activeColors: 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' }
+                          ].map(m => {
+                            const selectedDayMood = (moods || []).find(x => x && x.date === selectedDateStr)?.mood;
+                            const isSelected = selectedDayMood === m.id;
+                            const notSelectedOpacity = selectedDayMood && !isSelected ? 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100' : '';
+                            
+                            return (
+                              <button
+                                key={m.id}
+                                onClick={() => setMood(selectedDateStr, m.id as any)}
+                                className={`group flex-1 flex flex-col items-center justify-center p-3 md:p-4 rounded-2xl transition-all border shrink-0 min-w-[60px] md:min-w-[70px] ${isSelected ? m.activeColors + ' border-transparent scale-105' : m.colors + ' ' + notSelectedOpacity}`}
+                                title={lang === 'id' ? m.label : m.labelEn}
+                              >
+                                <div className={`transition-transform ${isSelected ? 'scale-110 mb-1' : 'group-hover:scale-110 group-active:scale-95 mb-2'}`}>
+                                  {getMoodIcon(m.id, isSelected ? "w-7 h-7 md:w-8 md:h-8" : "w-6 h-6 md:w-7 md:h-7")}
+                                </div>
+                                <span className={`text-[10px] md:text-xs font-bold tracking-tight ${isSelected ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                                  {lang === 'id' ? m.label : m.labelEn}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
-                  </div>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 mt-6">
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                         {lang === 'id' ? 'Tugas pada tanggal ini' : 'Tasks on this date'}
+                      </h3>
+                      {selectedTasks.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedTasks.map(task => (
+                             <div key={task.id} className="flex items-center gap-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                               <div className={`w-3.5 h-3.5 rounded-full border-2 ${task.completed || (task.completedDates && task.completedDates.includes(selectedDateStr)) ? 'bg-emerald-500 border-emerald-500' : 'bg-transparent border-slate-600'}`}></div>
+                               <span className={`text-sm font-medium ${task.completed || (task.completedDates && task.completedDates.includes(selectedDateStr)) ? 'text-slate-400 line-through' : 'text-slate-200'}`}>{task.title}</span>
+                             </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-slate-400 text-sm">
+                          {t('emptyCalendar') || 'Tidak ada tugas atau catatan di tanggal ini.'}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
                 
                 {/* Habit Stats */}
-                {tasks.filter(t => t.repeat === 'daily').length > 0 && (
+                {tasks.filter(t => t.repeat === 'daily' && !t.isDiscipline).length > 0 && (
                   <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 mt-6">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
                        <Repeat className="w-4 h-4" />
                        {lang === 'id' ? 'Statistik Kebiasaan' : 'Habit Statistics'}
                     </h3>
                     <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 snap-x sm:mx-0 sm:px-0">
-                      {tasks.filter(t => t.repeat === 'daily').map(task => {
+                      {tasks.filter(t => t.repeat === 'daily' && !t.isDiscipline).map(task => {
                         const createdAt = new Date(task.createdAt || getTaskDateStr(task.date));
                         const createdStr = new Date(createdAt.getTime() - (createdAt.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
                         

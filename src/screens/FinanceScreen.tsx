@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Plus, Minus, Hash, Tag, FileText, Calendar, Trash2, ArrowUpRight, ArrowDownRight, Wallet, ArrowLeft, MoreVertical, Download, AlertTriangle, ChevronDown, PieChart as PieChartIcon, Activity, Upload, Search, X, Target, Edit2 } from 'lucide-react';
 import { Transaction } from '../types';
+import { generateId } from '../utils';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const expenseCategoriesList = ['Food', 'Transport', 'Bills', 'Investment', 'Health', 'Education', 'Entertainment', 'Pocket Money', 'Savings', 'Other'];
@@ -204,7 +205,7 @@ export default function FinanceScreen({ appTheme, onBack }: { appTheme: string; 
       });
     } else {
       const newTransaction: Transaction = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         type,
         amount: finalAmount,
         category: category || (type === 'income' ? 'Salary' : 'Other'),

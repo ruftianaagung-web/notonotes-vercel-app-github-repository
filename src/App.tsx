@@ -66,17 +66,25 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'pink'>(() => (localStorage.getItem('noto_theme') as 'dark' | 'light' | 'pink') || 'dark');
+  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'pink'>(() => {
+    try {
+      return (localStorage.getItem('noto_theme') as 'dark' | 'light' | 'pink') || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
   
   useEffect(() => {
-    localStorage.setItem('noto_theme', appTheme);
+    try {
+      localStorage.setItem('noto_theme', appTheme);
+    } catch (e) {}
   }, [appTheme]);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [inAppAlarm, setInAppAlarm] = useState<{id: number, title: string, body: string, isAlarm?: boolean} | null>(null);
 
   useEffect(() => {
     // Schedule future notifications if supported by the browser (Experimental Web API)
-    if ('serviceWorker' in navigator && 'showTrigger' in Notification.prototype && Notification.permission === 'granted') {
+    if ('serviceWorker' in navigator && typeof Notification !== 'undefined' && 'showTrigger' in Notification.prototype && Notification.permission === 'granted') {
       navigator.serviceWorker.ready.then(async (reg) => {
         try {
           // Attempt to schedule notifications for the next 24 hours
@@ -125,7 +133,8 @@ export default function App() {
       
       const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
       const todayDate = localDate.toISOString().split('T')[0];
-      const lastNotif = localStorage.getItem('noto_last_notif_date_time');
+      let lastNotif = '';
+      try { lastNotif = localStorage.getItem('noto_last_notif_date_time') || ''; } catch(e) {}
       
       const sendNotification = (title: string, body: string, isImportant: boolean = false) => {
         const id = Date.now();
@@ -196,7 +205,7 @@ export default function App() {
       const remTotalMinutes = remHour * 60 + remMin;
 
       if (reminderActive && reminderTime && currentTotalMinutes >= remTotalMinutes && (currentTotalMinutes - remTotalMinutes) <= 5 && lastNotif !== `${todayDate}_${reminderTime}`) {
-        localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`);
+        try { localStorage.setItem('noto_last_notif_date_time', `${todayDate}_${reminderTime}`); } catch(e){}
         const todayTasks = tasks.filter(t => {
             if (t.date === 'Hari ini' || (t.date && t.date.toLowerCase() === 'today') || t.repeat === 'daily') return true;
             return t.date === todayDate;
@@ -233,11 +242,13 @@ export default function App() {
 
            if (currentTotalMinutes >= alarmTotalMinutes && (currentTotalMinutes - alarmTotalMinutes) <= 5) {
              const alarmKey = `noto_alarm_${task.id}_${todayDate}`;
-             if (!localStorage.getItem(alarmKey)) {
-               localStorage.setItem(alarmKey, 'true');
-               const message = lang === 'id' ? `Ayo lakukan tugas "${task.title}" kamu!` : `Time to do your task: "${task.title}"!`;
-               sendNotification(t('alarmDue') || "Waktunya Tugas!", message, true);
-             }
+             try {
+               if (!localStorage.getItem(alarmKey)) {
+                 localStorage.setItem(alarmKey, 'true');
+                 const message = lang === 'id' ? `Ayo lakukan tugas "${task.title}" kamu!` : `Time to do your task: "${task.title}"!`;
+                 sendNotification(t('alarmDue') || "Waktunya Tugas!", message, true);
+               }
+             } catch(e) {}
            }
         }
       });
@@ -383,7 +394,7 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
   const t = useTranslation(lang);
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
-  const { user, setAppPin } = useAppStore();
+  const { user, setAppPin, pinRecoveryQuestion, pinRecoveryAnswer, setPinRecoveryQuestion, setPinRecoveryAnswer } = useAppStore();
 
   const [forgotModalVisible, setForgotModalVisible] = useState(false);
   const [forgotNameInput, setForgotNameInput] = useState('');
@@ -416,8 +427,14 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
   };
 
   const handleForgotPinSubmit = () => {
-    if (forgotNameInput.toLowerCase() === (user?.name || '').toLowerCase()) {
+    const isCorrect = pinRecoveryAnswer 
+      ? forgotNameInput.trim().toLowerCase() === pinRecoveryAnswer.trim().toLowerCase()
+      : forgotNameInput.trim().toLowerCase() === (user?.name || '').trim().toLowerCase();
+
+    if (isCorrect) {
       setAppPin(null);
+      setPinRecoveryQuestion(null);
+      setPinRecoveryAnswer(null);
       setForgotModalVisible(false);
     } else {
       setError(true);
@@ -482,7 +499,13 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
           <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-6 z-50">
             <div className={`bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-sm ${error ? 'animate-pulse border-red-500/50' : ''}`}>
               <h3 className="text-lg font-bold text-slate-50 mb-2">{t('resetPin') || 'Reset PIN'}</h3>
-              <p className="text-sm text-slate-400 mb-4">{t('resetPinDesc') || 'Masukkan nama profil Anda untuk memverifikasi dan menghapus PIN.'}</p>
+              <p className="text-sm text-slate-400 mb-2">{t('resetPinDesc') || 'Jawab pertanyaan keamanan Anda untuk memverifikasi dan menghapus PIN.'}</p>
+              {pinRecoveryQuestion && (
+                <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl mb-4">
+                  <span className="text-xs text-indigo-400 font-bold uppercase tracking-widest mb-1 block">Pertanyaan</span>
+                  <p className="text-sm text-slate-200">{pinRecoveryQuestion}</p>
+                </div>
+              )}
               <input
                 type="text"
                 autoFocus
@@ -490,7 +513,7 @@ function PinScreen({ correctPin, onUnlock, appTheme, lang }: { correctPin: strin
                 onChange={e => setForgotNameInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleForgotPinSubmit()}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-50 mb-4 outline-none focus:border-indigo-500 transition-colors"
-                placeholder={t('nickname') || "Nama profil Anda..."}
+                placeholder={pinRecoveryQuestion ? "Jawaban Anda..." : (t('nickname') || "Nama profil Anda...")}
               />
               <div className="flex justify-end gap-3">
                 <button 

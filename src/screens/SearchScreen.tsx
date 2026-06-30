@@ -3,6 +3,7 @@ import { Search as SearchIcon, X, FileText, Pin, Trash2, Bell, Folder, CheckSqua
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Note, Task } from '../types';
+import { generateId } from '../utils';
 
 export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) => void }) {
   const { notes, tasks, toggleTask, updateTask, deleteTask, updateNote, deleteNote, searchQuery, setSearchQuery, lang, checkInDaily } = useAppStore();
@@ -50,7 +51,7 @@ export default function SearchScreen({ onOpenNote }: { onOpenNote: (note: Note) 
   const handleCreateNote = () => {
     const locale = lang === 'en' ? 'en-US' : 'id-ID';
     onOpenNote({
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: '',
       content: '',
       date: new Date().toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }),

@@ -77,8 +77,10 @@ export default function TetrisScreen({ onBack }: { onBack: () => void }) {
   const [highScore, setHighScore] = useState(0);
 
   useEffect(() => {
-    const saved = localStorage.getItem('tetris_highscore');
-    if (saved) setHighScore(parseInt(saved, 10));
+    try {
+      const saved = localStorage.getItem('tetris_highscore');
+      if (saved) setHighScore(parseInt(saved, 10));
+    } catch(e) {}
   }, []);
 
   const playSound = useCallback((type: 'move' | 'clear' | 'gameover' | 'rotate') => {
@@ -153,7 +155,9 @@ export default function TetrisScreen({ onBack }: { onBack: () => void }) {
         playSound('gameover');
         if (score > highScore) {
           setHighScore(score);
-          localStorage.setItem('tetris_highscore', score.toString());
+          try {
+            localStorage.setItem('tetris_highscore', score.toString());
+          } catch(e) {}
         }
         return;
       }

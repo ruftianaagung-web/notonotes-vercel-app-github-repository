@@ -4,6 +4,7 @@ import { Note, Task } from '../types';
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
+import { generateId } from '../utils';
 
 interface HomeProps {
   appTheme: string;
@@ -136,7 +137,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   const handleCreateNote = () => {
     const locale = lang === 'en' ? 'en-US' : 'id-ID';
     onOpenNote({
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: '',
       content: '',
       date: new Date().toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -145,29 +146,41 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
   };
 
   const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [hasSeenUpdate121, setHasSeenUpdate121] = useState(() => localStorage.getItem('noto_update_1_2_1') === 'true');
-  const [showDailyAd, setShowDailyAd] = useState(() => {
-    const today = new Date().toDateString();
-    const lastDate = localStorage.getItem('noto_ad_date');
-    const adCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
-    
-    if (lastDate !== today) {
-      return true;
+  const [hasSeenUpdate121, setHasSeenUpdate121] = useState(() => {
+    try {
+      return localStorage.getItem('noto_update_1_2_1') === 'true';
+    } catch(e) {
+      return true; // Skip if fails
     }
-    return adCount < 2;
+  });
+  const [showDailyAd, setShowDailyAd] = useState(() => {
+    try {
+      const today = new Date().toDateString();
+      const lastDate = localStorage.getItem('noto_ad_date');
+      const adCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
+      
+      if (lastDate !== today) {
+        return true;
+      }
+      return adCount < 2;
+    } catch(e) {
+      return false; // Skip ad if errors out
+    }
   });
 
   const handleCloseAd = () => {
-    const today = new Date().toDateString();
-    const lastDate = localStorage.getItem('noto_ad_date');
-    let currentCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
-    
-    if (lastDate !== today) {
-       localStorage.setItem('noto_ad_date', today);
-       localStorage.setItem('noto_ad_count', '1');
-    } else {
-       localStorage.setItem('noto_ad_count', (currentCount + 1).toString());
-    }
+    try {
+      const today = new Date().toDateString();
+      const lastDate = localStorage.getItem('noto_ad_date');
+      let currentCount = parseInt(localStorage.getItem('noto_ad_count') || '0', 10);
+      
+      if (lastDate !== today) {
+         localStorage.setItem('noto_ad_date', today);
+         localStorage.setItem('noto_ad_count', '1');
+      } else {
+         localStorage.setItem('noto_ad_count', (currentCount + 1).toString());
+      }
+    } catch(e) {}
     
     setShowDailyAd(false);
   };
@@ -658,7 +671,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
             onClick={() => {
               setShowNotificationModal(false);
               if (!hasSeenUpdate121) {
-                localStorage.setItem('noto_update_1_2_1', 'true');
+                try { localStorage.setItem('noto_update_1_2_1', 'true'); } catch(e){}
                 setHasSeenUpdate121(true);
               }
             }}
@@ -676,7 +689,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                   onClick={() => {
                     setShowNotificationModal(false);
                     if (!hasSeenUpdate121) {
-                      localStorage.setItem('noto_update_1_2_1', 'true');
+                      try { localStorage.setItem('noto_update_1_2_1', 'true'); } catch(e){}
                       setHasSeenUpdate121(true);
                     }
                   }}
@@ -693,7 +706,7 @@ export default function HomeScreen({ appTheme, setAppTheme, onOpenNote, onNaviga
                   onClick={() => {
                     setShowNotificationModal(false);
                     if (!hasSeenUpdate121) {
-                      localStorage.setItem('noto_update_1_2_1', 'true');
+                      try { localStorage.setItem('noto_update_1_2_1', 'true'); } catch(e){}
                       setHasSeenUpdate121(true);
                     }
                   }}

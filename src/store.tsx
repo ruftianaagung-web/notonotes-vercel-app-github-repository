@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Note, Task, User, Transaction, MoodEntry } from './types';
 import { currentUser, recentNotes, allTasks } from './data';
+import { generateId } from './utils';
 
 interface AppContextType {
   notes: Note[];
@@ -28,6 +29,10 @@ interface AppContextType {
   setSearchQuery: (q: string) => void;
   appPin: string | null;
   setAppPin: (pin: string | null) => void;
+  pinRecoveryQuestion: string | null;
+  setPinRecoveryQuestion: (question: string | null) => void;
+  pinRecoveryAnswer: string | null;
+  setPinRecoveryAnswer: (answer: string | null) => void;
   lang: 'id' | 'en';
   setLang: (l: 'id' | 'en') => void;
   isUnlocked: boolean;
@@ -52,9 +57,23 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const safeSetItem = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error(`Failed to save ${key} to localStorage:`, e);
+  }
+};
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(() => {
-    try { const s = localStorage.getItem('noto_user'); if (s) return JSON.parse(s); } catch(e){}
+    try { 
+      const s = localStorage.getItem('noto_user'); 
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch(e){}
     return currentUser;
   });
 
@@ -63,12 +82,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const s = localStorage.getItem('noto_notes'); 
       if (s) {
         const parsed = JSON.parse(s);
-        const seen = new Set();
-        return parsed.map((n: Note) => {
-          if (seen.has(n.id)) n.id = crypto.randomUUID();
-          seen.add(n.id);
-          return n;
-        });
+        if (Array.isArray(parsed)) {
+          const seen = new Set();
+          return parsed.map((n: Note) => {
+            if (seen.has(n.id)) n.id = generateId();
+            seen.add(n.id);
+            return n;
+          });
+        }
       } 
     } catch(e){}
     return recentNotes;
@@ -80,18 +101,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (s) {
         const todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         const parsed = JSON.parse(s);
-        const seen = new Set();
-        return parsed.map((t: Task) => {
-          if (seen.has(t.id)) t.id = crypto.randomUUID();
-          seen.add(t.id);
-          
-          if (t.repeat === 'daily' && t.date && t.date < todayStr) {
-            t.date = todayStr;
-            t.completed = false;
-          }
-          
-          return t;
-        });
+        if (Array.isArray(parsed)) {
+          const seen = new Set();
+          return parsed.map((t: Task) => {
+            if (seen.has(t.id)) t.id = generateId();
+            seen.add(t.id);
+            
+            if (t.repeat === 'daily' && t.date && t.date < todayStr) {
+              t.date = todayStr;
+              t.completed = false;
+            }
+            
+            return t;
+          });
+        }
       }
     } catch(e){}
     return allTasks;
@@ -101,7 +124,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const s = localStorage.getItem('noto_transactions');
       if (s) {
-        return JSON.parse(s);
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch(e){}
     return [];
@@ -110,7 +134,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [moods, setMoods] = useState<MoodEntry[]>(() => {
     try {
       const s = localStorage.getItem('noto_moods');
-      if (s) return JSON.parse(s);
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch(e){}
     return [];
   });
@@ -118,7 +145,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [archivedTags, setArchivedTags] = useState<string[]>(() => {
     try {
       const s = localStorage.getItem('noto_archived_tags');
-      if (s) return JSON.parse(s);
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch(e){}
     return [];
   });
@@ -126,6 +156,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [appPin, setAppPin] = useState<string | null>(() => {
     try { return localStorage.getItem('noto_pin'); } catch(e){}
+    return null;
+  });
+  const [pinRecoveryQuestion, setPinRecoveryQuestion] = useState<string | null>(() => {
+    try { return localStorage.getItem('noto_pin_question'); } catch(e){}
+    return null;
+  });
+  const [pinRecoveryAnswer, setPinRecoveryAnswer] = useState<string | null>(() => {
+    try { return localStorage.getItem('noto_pin_answer'); } catch(e){}
     return null;
   });
   const [lang, setLang] = useState<'id' | 'en'>(() => {
@@ -173,21 +211,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return 0;
   });
 
-  useEffect(() => { localStorage.setItem('noto_lang', lang); }, [lang]);
-  useEffect(() => { localStorage.setItem('noto_reminder_active', JSON.stringify(reminderActive)); }, [reminderActive]);
-  useEffect(() => { localStorage.setItem('noto_reminder_time', reminderTime); }, [reminderTime]);
+  useEffect(() => { safeSetItem('noto_lang', lang); }, [lang]);
+  useEffect(() => { safeSetItem('noto_reminder_active', JSON.stringify(reminderActive)); }, [reminderActive]);
+  useEffect(() => { safeSetItem('noto_reminder_time', reminderTime); }, [reminderTime]);
   useEffect(() => {
-    if (savingsTarget !== null) localStorage.setItem('noto_savings_target', JSON.stringify(savingsTarget));
-    else localStorage.removeItem('noto_savings_target');
+    if (savingsTarget !== null) safeSetItem('noto_savings_target', JSON.stringify(savingsTarget));
+    else { try { localStorage.removeItem('noto_savings_target'); } catch(e){} }
   }, [savingsTarget]);
 
   useEffect(() => {
-    if (savingsTargetTitle) localStorage.setItem('noto_savings_target_title', savingsTargetTitle);
-    else localStorage.removeItem('noto_savings_target_title');
+    if (savingsTargetTitle) safeSetItem('noto_savings_target_title', savingsTargetTitle);
+    else { try { localStorage.removeItem('noto_savings_target_title'); } catch(e){} }
   }, [savingsTargetTitle]);
 
   useEffect(() => {
-    localStorage.setItem('noto_savings_balance', JSON.stringify(savingsBalance));
+    safeSetItem('noto_savings_balance', JSON.stringify(savingsBalance));
   }, [savingsBalance]);
 
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -203,7 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const u = localStorage.getItem('noto_user');
       if (u) {
         const parsed = JSON.parse(u);
-        if (parsed.name && parsed.name !== 'Pengguna') return true;
+        if (parsed?.name && parsed.name !== 'Pengguna') return true;
       }
 
       const tasksStr = localStorage.getItem('noto_tasks');
@@ -216,7 +254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return false;
   });
 
-  useEffect(() => { localStorage.setItem('noto_onboarding_completed', JSON.stringify(hasCompletedOnboarding)); }, [hasCompletedOnboarding]);
+  useEffect(() => { safeSetItem('noto_onboarding_completed', JSON.stringify(hasCompletedOnboarding)); }, [hasCompletedOnboarding]);
 
   // Streak logic
   const [streak, setStreak] = useState(() => {
@@ -241,15 +279,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  useEffect(() => { localStorage.setItem('noto_user', JSON.stringify(user)); }, [user]);
-  useEffect(() => { localStorage.setItem('noto_notes', JSON.stringify(notes)); }, [notes]);
-  useEffect(() => { localStorage.setItem('noto_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('noto_transactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('noto_moods', JSON.stringify(moods)); }, [moods]);
-  useEffect(() => { if (appPin) localStorage.setItem('noto_pin', appPin); else localStorage.removeItem('noto_pin'); }, [appPin]);
-  useEffect(() => { localStorage.setItem('noto_streak', streak.toString()); }, [streak]);
-  useEffect(() => { if (lastTaskCompleted) localStorage.setItem('noto_last_task_completed', lastTaskCompleted); }, [lastTaskCompleted]);
-  useEffect(() => { localStorage.setItem('noto_archived_tags', JSON.stringify(archivedTags)); }, [archivedTags]);
+  useEffect(() => { safeSetItem('noto_user', JSON.stringify(user)); }, [user]);
+  useEffect(() => { safeSetItem('noto_notes', JSON.stringify(notes)); }, [notes]);
+  useEffect(() => { safeSetItem('noto_tasks', JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { safeSetItem('noto_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { safeSetItem('noto_moods', JSON.stringify(moods)); }, [moods]);
+  useEffect(() => {
+    try {
+      if (appPin) safeSetItem('noto_pin', appPin); else localStorage.removeItem('noto_pin');
+    } catch(e){}
+  }, [appPin]);
+  useEffect(() => {
+    try {
+      if (pinRecoveryQuestion) safeSetItem('noto_pin_question', pinRecoveryQuestion); else localStorage.removeItem('noto_pin_question');
+    } catch(e){}
+  }, [pinRecoveryQuestion]);
+  useEffect(() => {
+    try {
+      if (pinRecoveryAnswer) safeSetItem('noto_pin_answer', pinRecoveryAnswer); else localStorage.removeItem('noto_pin_answer');
+    } catch(e){}
+  }, [pinRecoveryAnswer]);
+  useEffect(() => { safeSetItem('noto_streak', streak.toString()); }, [streak]);
+  useEffect(() => { if (lastTaskCompleted) safeSetItem('noto_last_task_completed', lastTaskCompleted); }, [lastTaskCompleted]);
+  useEffect(() => { safeSetItem('noto_archived_tags', JSON.stringify(archivedTags)); }, [archivedTags]);
 
   const addNote = (note: Note) => setNotes(prev => [note, ...prev]);
   const updateNote = (note: Note) => setNotes(prev => prev.map(n => n.id === note.id ? note : n));
@@ -362,13 +414,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const clearAllData = () => {
     // Securely wipe all data from local storage by overwriting with null bytes before removing
-    const keys = ['noto_user', 'noto_notes', 'noto_tasks', 'noto_transactions', 'noto_moods', 'noto_streak', 'noto_last_task_completed', 'noto_pin', 'noto_onboarding_completed', 'noto_archived_tags'];
+    const keys = ['noto_user', 'noto_notes', 'noto_tasks', 'noto_transactions', 'noto_moods', 'noto_streak', 'noto_last_task_completed', 'noto_pin', 'noto_pin_question', 'noto_pin_answer', 'noto_onboarding_completed', 'noto_archived_tags', 'noto_theme', 'noto_lang', 'noto_reminder_active', 'noto_reminder_time'];
     keys.forEach(key => {
-      const val = localStorage.getItem(key);
-      if (val) {
-        localStorage.setItem(key, '0'.repeat(val.length || 1000));
-        localStorage.removeItem(key);
-      }
+      try {
+        const val = localStorage.getItem(key);
+        if (val) {
+          safeSetItem(key, '0'.repeat(val.length || 1000));
+          localStorage.removeItem(key);
+        }
+      } catch (e) {}
     });
 
     setNotes([]);
@@ -378,6 +432,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setStreak(0);
     setLastTaskCompleted(null);
     setAppPin(null);
+    setPinRecoveryQuestion(null);
+    setPinRecoveryAnswer(null);
     setHasCompletedOnboarding(false);
     setUser({ name: 'Pengguna', avatarUrl: '' });
   };
@@ -389,6 +445,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTransaction, updateTransaction, deleteTransaction, clearAllTransactions, importTransactions,
     importData, clearAllData,
     searchQuery, setSearchQuery, appPin, setAppPin,
+    pinRecoveryQuestion, setPinRecoveryQuestion, pinRecoveryAnswer, setPinRecoveryAnswer,
     lang, setLang,
     hasCompletedOnboarding, setHasCompletedOnboarding,
     isUnlocked, setIsUnlocked, streak,
@@ -397,7 +454,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     savingsBalance, setSavingsBalance, checkInDaily,
     archivedTags, setArchivedTags
   }), [
-    notes, tasks, transactions, moods, user, searchQuery, appPin, lang,
+    notes, tasks, transactions, moods, user, searchQuery, appPin, pinRecoveryQuestion, pinRecoveryAnswer, lang,
     hasCompletedOnboarding, isUnlocked, streak,
     reminderActive, reminderTime, savingsTarget, savingsTargetTitle, savingsBalance,
     archivedTags

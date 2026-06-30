@@ -6,13 +6,16 @@ import {
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { ScreenItem } from '../App';
+import { generateId, encryptData, decryptData, hashPin } from '../utils';
 
 export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { appTheme: string, setAppTheme: (t: 'dark' | 'light' | 'pink') => void, onNavigate?: (s: ScreenItem) => void }) {
-  const { transactions, notes, tasks, user, updateUser, appPin, setAppPin, setIsUnlocked, importData, clearAllData, lang, setLang, streak, reminderActive, setReminderActive, reminderTime, setReminderTime } = useAppStore();
+  const { transactions, notes, tasks, user, updateUser, appPin, setAppPin, pinRecoveryQuestion, setPinRecoveryQuestion, pinRecoveryAnswer, setPinRecoveryAnswer, setIsUnlocked, importData, clearAllData, lang, setLang, streak, reminderActive, setReminderActive, reminderTime, setReminderTime } = useAppStore();
   const t = useTranslation(lang);
 
   const [pinModalMode, setPinModalMode] = useState<'create' | 'verify' | 'change' | 'remove' | null>(null);
   const [pinInput, setPinInput] = useState('');
+  const [pinQuestionInput, setPinQuestionInput] = useState('');
+  const [pinAnswerInput, setPinAnswerInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -102,21 +105,21 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
         const parsedTransactions = data.transactions || [];
         const seenTxIds = new Set();
         const uniqueTransactions = parsedTransactions.map((t: any) => {
-          if (seenTxIds.has(t.id)) t.id = crypto.randomUUID();
+          if (seenTxIds.has(t.id)) t.id = generateId();
           seenTxIds.add(t.id);
           return t;
         });
 
         const seenTaskIds = new Set();
         const uniqueTasks = data.tasks.map((t: any) => {
-          if (seenTaskIds.has(t.id)) t.id = crypto.randomUUID();
+          if (seenTaskIds.has(t.id)) t.id = generateId();
           seenTaskIds.add(t.id);
           return t;
         });
 
         const seenNoteIds = new Set();
         const uniqueNotes = data.notes.map((n: any) => {
-          if (seenNoteIds.has(n.id)) n.id = crypto.randomUUID();
+          if (seenNoteIds.has(n.id)) n.id = generateId();
           seenNoteIds.add(n.id);
           return n;
         });
@@ -459,10 +462,19 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                   if (e.key === 'Enter' && pinInput.length === 4) {
                     const { hashPin } = await import('../utils');
                     if (pinModalMode === 'create' || pinModalMode === 'change') {
+                      if (!pinQuestionInput.trim() || !pinAnswerInput.trim()) {
+                        setPinError(true);
+                        setTimeout(() => setPinError(false), 500);
+                        return;
+                      }
                       const hashed = await hashPin(pinInput);
                       setAppPin(hashed);
+                      setPinRecoveryQuestion(pinQuestionInput.trim());
+                      setPinRecoveryAnswer(pinAnswerInput.trim().toLowerCase());
                       setIsUnlocked(true);
                       setPinModalMode(null);
+                      setPinQuestionInput('');
+                      setPinAnswerInput('');
                     } else if (pinModalMode === 'verify') {
                       const hashed = await hashPin(pinInput);
                       if (hashed === appPin || pinInput === appPin) { // fallback for legacy plaintext pin
@@ -478,6 +490,8 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                       const hashed = await hashPin(pinInput);
                       if (hashed === appPin || pinInput === appPin) { // fallback for legacy plaintext pin
                         setAppPin(null);
+                        setPinRecoveryQuestion(null);
+                        setPinRecoveryAnswer(null);
                         setPinModalMode(null);
                       } else {
                         setPinError(true);
@@ -490,11 +504,31 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-50 tracking-[1em] text-center mb-4 outline-none focus:border-indigo-500 transition-colors"
                 placeholder="••••"
               />
+              {(pinModalMode === 'create' || pinModalMode === 'change') && (
+                <div className="space-y-3 mb-6">
+                  <input
+                    type="text"
+                    value={pinQuestionInput}
+                    onChange={e => setPinQuestionInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-50 text-sm outline-none focus:border-indigo-500 transition-colors"
+                    placeholder="Pertanyaan Keamanan (cth: Nama hewan peliharaan?)"
+                  />
+                  <input
+                    type="text"
+                    value={pinAnswerInput}
+                    onChange={e => setPinAnswerInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-50 text-sm outline-none focus:border-indigo-500 transition-colors"
+                    placeholder="Jawaban Anda"
+                  />
+                </div>
+              )}
               <div className="flex justify-end gap-3">
                 <button 
                   onClick={() => {
                     setPinModalMode(null);
                     setPinInput('');
+                    setPinQuestionInput('');
+                    setPinAnswerInput('');
                     setPinError(false);
                   }}
                   className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-50 transition-colors"
@@ -502,14 +536,18 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                   {t('cancel')}
                 </button>
                 <button 
-                  disabled={pinInput.length !== 4}
+                  disabled={pinInput.length !== 4 || ((pinModalMode === 'create' || pinModalMode === 'change') && (!pinQuestionInput.trim() || !pinAnswerInput.trim()))}
                   onClick={async () => {
                     const { hashPin } = await import('../utils');
                     if (pinModalMode === 'create' || pinModalMode === 'change') {
                       const hashed = await hashPin(pinInput);
                       setAppPin(hashed);
+                      setPinRecoveryQuestion(pinQuestionInput.trim());
+                      setPinRecoveryAnswer(pinAnswerInput.trim().toLowerCase());
                       setIsUnlocked(true);
                       setPinModalMode(null);
+                      setPinQuestionInput('');
+                      setPinAnswerInput('');
                     } else if (pinModalMode === 'verify') {
                       const hashed = await hashPin(pinInput);
                       if (hashed === appPin || pinInput === appPin) {
@@ -525,6 +563,8 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                       const hashed = await hashPin(pinInput);
                       if (hashed === appPin || pinInput === appPin) {
                         setAppPin(null);
+                        setPinRecoveryQuestion(null);
+                        setPinRecoveryAnswer(null);
                         setPinModalMode(null);
                       } else {
                         setPinError(true);
@@ -533,7 +573,7 @@ export default function SettingsScreen({ appTheme, setAppTheme, onNavigate }: { 
                       }
                     }
                   }}
-                  className={`px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors ${pinInput.length === 4 ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
+                  className={`px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors ${pinInput.length === 4 && (!['create', 'change'].includes(pinModalMode) || (pinQuestionInput.trim() && pinAnswerInput.trim())) ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
                 >
                   {t('save')}
                 </button>

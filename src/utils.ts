@@ -1,4 +1,22 @@
+export function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try {
+      return crypto.randomUUID();
+    } catch(e) {}
+  }
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
 export async function hashPin(pin: string): Promise<string> {
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    let hash = 0;
+    for (let i = 0; i < pin.length; i++) {
+      const char = pin.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16).padStart(8, '0');
+  }
   const encoder = new TextEncoder();
   const data = encoder.encode(pin);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -7,6 +25,9 @@ export async function hashPin(pin: string): Promise<string> {
 }
 
 export async function encryptData(data: string, password: string): Promise<string> {
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return btoa(unescape(encodeURIComponent(data)));
+  }
   const enc = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -48,6 +69,14 @@ export async function encryptData(data: string, password: string): Promise<strin
 }
 
 export async function decryptData(encryptedStr: string, password: string): Promise<string> {
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    try {
+      if (encryptedStr.startsWith('{')) throw new Error("Fallback cannot decrypt true secure data");
+      return decodeURIComponent(escape(atob(encryptedStr)));
+    } catch(e) {
+      return encryptedStr;
+    }
+  }
   const enc = new TextEncoder();
   const parsed = JSON.parse(encryptedStr);
   if (parsed.v !== 1) throw new Error("Unsupported version");

@@ -3,6 +3,7 @@ import { Plus, Trash2, ClipboardList, Repeat, Bell, X, Target, Image as ImageIco
 import { useAppStore } from '../store';
 import { useTranslation } from '../translations';
 import { Task } from '../types';
+import { generateId } from '../utils';
 
 export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => void }) {
   const [activeTab, setActiveTab] = useState<'Biasa' | 'Disiplin'>('Biasa');
@@ -67,11 +68,11 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            disciplineData: newTaskIsDiscipline ? (editingTask.disciplineData || {}) : undefined
          });
          if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
-           localStorage.setItem(`noto_alarm_${editingTask.id}_${todayDate}`, 'true');
+           try { localStorage.setItem(`noto_alarm_${editingTask.id}_${todayDate}`, 'true'); } catch(e){}
          }
        } else {
          const locale = lang === 'en' ? 'en-US' : 'id-ID';
-         const newId = crypto.randomUUID();
+         const newId = generateId();
          addTask({
            id: newId,
            title: newTaskTitle.trim(),
@@ -86,7 +87,7 @@ export default function TasksScreen({ onNavigate }: { onNavigate?: (s: any) => v
            disciplineData: newTaskIsDiscipline ? {} : undefined
          });
          if (newTaskAlarm && isTodayTask && newTaskAlarm <= currentTime) {
-           localStorage.setItem(`noto_alarm_${newId}_${todayDate}`, 'true');
+           try { localStorage.setItem(`noto_alarm_${newId}_${todayDate}`, 'true'); } catch(e){}
          }
        }
     }

@@ -240,7 +240,9 @@ export default function GameScreen({ onBack }: { onBack: () => void }) {
         playSound('die');
         if (score > highScore) {
           setHighScore(score);
-          localStorage.setItem('noto_snake_highscore', score.toString());
+          try {
+            localStorage.setItem('noto_snake_highscore', score.toString());
+          } catch(e){}
         }
         return;
       }

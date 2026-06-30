@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Trash2,
   Image as ImageIcon,
+  Paperclip,
 } from "lucide-react";
 import { useTranslation } from '../translations';
 import { Note } from "../types";
@@ -113,9 +114,47 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docAttachRef = useRef<HTMLInputElement>(null);
 
   const handleImage = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleDocAttachClick = () => {
+    docAttachRef.current?.click();
+  };
+
+  const handleDocAttachChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (editorRef.current) {
+        editorRef.current.focus();
+        // Create an attractive, non-editable looking file attachment block
+        const fileExt = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+        const html = `
+          <br><br>
+          <a href="${dataUrl}" download="${file.name}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; text-decoration: none; color: #f8fafc; max-width: 300px; margin: 4px 0;" contenteditable="false">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background-color: #312e81; color: #818cf8; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">
+              ${fileExt.substring(0, 4)}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</div>
+              <div style="font-size: 12px; color: #94a3b8;">${(file.size / 1024).toFixed(1)} KB • Klik untuk unduh</div>
+            </div>
+          </a>
+          <br><br>
+        `;
+        document.execCommand("insertHTML", false, html);
+        contentRef.current = editorRef.current.innerHTML;
+        setHasUnsavedChanges(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,6 +392,7 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
                 handleImage();
               }}
               className="hover:text-indigo-400 transition-colors"
+              title="Lampirkan Gambar"
             >
               <ImageIcon size={18} />
             </button>
@@ -361,6 +401,23 @@ export default function NoteEditorScreen({ note, onBack }: NoteEditorProps) {
               ref={fileInputRef} 
               onChange={handleFileChange} 
               accept="image/*" 
+              className="hidden" 
+            />
+            <button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleDocAttachClick();
+              }}
+              className="hover:text-indigo-400 transition-colors"
+              title="Lampirkan Dokumen"
+            >
+              <Paperclip size={18} />
+            </button>
+            <input 
+              type="file" 
+              ref={docAttachRef} 
+              onChange={handleDocAttachChange} 
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar" 
               className="hidden" 
             />
           </div>
